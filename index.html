@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chicharrón de Chile - Control de Negocio</title>
+<style>
+  :root{
+    --chile-red:#B5322C;
+    --habanero:#E8792A;
+    --masa:#F6EEE0;
+    --char:#241A15;
+    --serrano:#5C7A4A;
+    --line: rgba(36,26,21,0.12);
+    --white:#FFFDF9;
+  }
+  .cc-app.dark{
+    --masa:#181210;
+    --char:#F0E6DA;
+    --line: rgba(255,255,255,0.14);
+    --white:#241B16;
+  }
+  .cc-app.dark .cc-venta-row input,
+  .cc-app.dark .cc-venta-row select,
+  .cc-app.dark .cc-field input,
+  .cc-app.dark .cc-field select{
+    background: var(--char);
+    color: var(--white);
+  }
+  .cc-app.dark ::placeholder{ color: #8a7b6d; }
+  *{box-sizing:border-box;}
+  .cc-app{
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--masa);
+    color: var(--char);
+    border-radius: 16px;
+    padding: 0;
+    max-width: 100%;
+    min-height: 560px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .cc-header{
+    background: linear-gradient(135deg, var(--chile-red), #8f231e);
+    color: var(--white);
+    padding: 20px 22px 18px;
+    position: relative;
+  }
+  .cc-header h1{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    letter-spacing: 0.2px;
+  }
+  .cc-header p{
+    margin:0;
+    font-size: 12.5px;
+    opacity: 0.85;
+  }
+  .cc-tabs{
+    display:flex;
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    overflow-x:auto;
+  }
+  .cc-tab{
+    flex: 1;
+    min-width: 84px;
+    text-align:center;
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8a7b6d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    user-select:none;
+    white-space:nowrap;
+  }
+  .cc-tab.active{
+    color: var(--chile-red);
+    border-bottom-color: var(--habanero);
+  }
+  .cc-body{
+    padding: 18px 20px 24px;
+    max-height: 620px;
+    overflow-y:auto;
+  }
+  .cc-card{
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .cc-grid3{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .cc-stat{
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .cc-stat .label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8a7b6d;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .cc-stat .value{
+    font-size: 22px;
+    font-weight: 800;
+    font-family: Georgia, serif;
+  }
+  .cc-stat.pos .value{ color: var(--serrano); }
+  .cc-stat.neg .value{ color: var(--chile-red); }
+  .cc-stat.warn .value{ color: var(--habanero); }
+  h3.cc-h{
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--char);
+  }
+  .cc-form-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .cc-field{ display:flex; flex-direction:column; gap:4px; }
+  .cc-field.full{ grid-column: 1 / -1; }
+  .cc-field label{ font-size:11.5px; font-weight:600; color:#6b5d50; }
+  .cc-field input, .cc-field select{
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--masa);
+    color: var(--char);
+    font-family: inherit;
+  }
+  .cc-field input:focus, .cc-field select:focus{
+    outline: 2px solid var(--habanero);
+    outline-offset: 1px;
+  }
+  .cc-checkbox-row{
+    display:flex; align-items:center; gap:8px;
+    font-size: 13.5px; font-weight:600;
+  }
+  .cc-btn{
+    background: var(--chile-red);
+    color: var(--white);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+  .cc-btn:hover{ background:#943026; }
+  .cc-btn.ghost{
+    background: transparent;
+    color: var(--chile-red);
+    border: 1px solid var(--chile-red);
+  }
+  .cc-btn.small{
+    width:auto;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .cc-list-item{
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--white);
+  }
+  .cc-list-item .top{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 6px;
+  }
+  .cc-tipo-tag{
+    font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px;
+    color:#fff;
+  }
+  .cc-tipo-tag.habanero{ background: var(--habanero); }
+  .cc-tipo-tag.serrano{ background: var(--serrano); }
+  .cc-tipo-tag.jalapeno{ background: #3E7C4A; }
+  .cc-meta{ font-size:12px; color:#8a7b6d; }
+  .cc-row-detail{
+    display:flex; justify-content:space-between; font-size: 13px; margin-top:2px;
+  }
+  .cc-empty{
+    text-align:center; padding: 30px 10px; color:#a8998a; font-size:13px;
+  }
+  .cc-pill{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px;
+  }
+  .cc-pill.pagado{ background:#E4EEDE; color:var(--serrano); }
+  .cc-pill.pendiente{ background:#FBE4D9; color:var(--chile-red); }
+  .cc-filterbar{
+    display:flex; gap:8px; margin-bottom:12px;
+  }
+  .cc-filter-btn{
+    flex:1; text-align:center; padding:7px; border-radius:8px; font-size:12.5px;
+    font-weight:700; cursor:pointer; border:1px solid var(--line); background:var(--white); color:#8a7b6d;
+  }
+  .cc-filter-btn.active{ background: var(--char); color:#fff; border-color:var(--char); }
+  .cc-loading{ text-align:center; padding:40px; color:#8a7b6d; font-size:13px; }
+  .cc-del{
+    background:none; border:none; color:#c99; font-size:12px; cursor:pointer; padding:2px 4px;
+  }
+  .cc-del:hover{ color: var(--chile-red); }
+  .cc-venta-row{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    padding:8px 10px; background:var(--masa); border-radius:8px; margin-bottom:8px;
+  }
+  .cc-venta-row.disabled{ opacity:0.5; }
+  .cc-venta-row select{
+    flex:1 1 110px; min-width:90px; padding:7px 8px; border:1px solid var(--line);
+    border-radius:7px; font-size:12.5px; background:var(--white); color:var(--char); font-family:inherit;
+  }
+  .cc-venta-row input{
+    width:64px; padding:7px 6px; border:1px solid var(--line); border-radius:7px;
+    font-size:12.5px; background:var(--white); color:var(--char); font-family:inherit; text-align:center;
+  }
+  .cc-venta-row .cc-vlabel{ font-size:10px; color:#8a7b6d; display:block; margin-bottom:2px; }
+  .cc-vgroup{
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 8px; background: var(--white);
+  }
+  .cc-vgroup .top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .cc-vgroup .cliente{ font-size:14px; font-weight:700; }
+  .cc-vgroup .items{ display:flex; flex-direction:column; gap:3px; margin:6px 0; }
+  .cc-vitem{ display:flex; justify-content:space-between; font-size:12px; color:#5a4c40; }
+  .cc-vgroup .total-row{
+    display:flex; justify-content:space-between; align-items:center; margin-top:8px;
+    padding-top:8px; border-top:1px dashed var(--line); font-size:13.5px; font-weight:700;
+  }
+  .cc-theme-toggle{
+    position:absolute; top:16px; right:16px;
+    background: rgba(255,255,255,0.15); border: none; border-radius: 20px;
+    padding: 6px 12px; font-size: 14px; cursor: pointer; color: var(--white);
+  }
+</style>
+</head>
+<body style="margin:0; padding:16px; background:#EDE4D3; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+
+<div class="cc-app" id="ccApp">
+  <div class="cc-header" style="position:relative;">
+    <button class="cc-theme-toggle" id="temaToggleBtn" type="button">🌙</button>
+    <h1>🌶️ Chicharrón de Chile</h1>
+    <p>Control de lotes, ventas y caja</p>
+  </div>
+  <div class="cc-tabs" id="ccTabs"></div>
+  <div class="cc-body" id="ccBody">
+    <div class="cc-loading">Cargando datos...</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TIPOS = [
+    {id:'habanero', label:'Habanero', cls:'habanero'},
+    {id:'serrano', label:'Serrano', cls:'serrano'},
+    {id:'jalapeno', label:'Jalapeño', cls:'jalapeno'}
+  ];
+
+  let state = { lotes: [], ventas: [], gastos: [], pagos: [], clientes: [], ultimosPrecios: {}, temaOscuro: false, lotesCerrados: [] };
+  let activeTab = 'resumen';
+  let ventaFilter = 'todas';
+  let loteFilter = 'todas';
+  let ventaBusqueda = '';
+  let clienteBusqueda = '';
+  let tiposExpandido = {};
+  let editandoGasto = null;
+  let editandoLote = null;
+  let editandoVentaItem = null;
+  let editandoCliente = null;
+  let loaded = false;
+
+  const app = document.getElementById('ccApp');
+  const tabsEl = document.getElementById('ccTabs');
+  const bodyEl = document.getElementById('ccBody');
+
+  const TABS = [
+    {id:'resumen', label:'Resumen', icon:'📊'},
+    {id:'lotes', label:'Lotes', icon:'📦'},
+    {id:'ventas', label:'Ventas', icon:'🌶️'},
+    {id:'clientes', label:'Clientes', icon:'👥'},
+    {id:'gastos', label:'Gastos', icon:'💸'},
+    {id:'caja', label:'Caja', icon:'💰'}
+  ];
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // Two-click confirmation, since native confirm()/prompt() dialogs don't work reliably in this environment
+  function armarConfirmacion(btn, textoConfirmar, accion){
+    if(btn.dataset.armado === '1'){
+      accion();
+      return;
+    }
+    btn.dataset.armado = '1';
+    const textoOriginal = btn.textContent;
+    const bgOriginal = btn.style.background;
+    const colorOriginal = btn.style.color;
+    btn.textContent = textoConfirmar;
+    btn.style.background = '#B5322C';
+    btn.style.color = '#fff';
+    btn._resetConfirmacion = ()=>{
+      btn.dataset.armado = '';
+      btn.textContent = textoOriginal;
+      btn.style.background = bgOriginal;
+      btn.style.color = colorOriginal;
+    };
+    setTimeout(()=>{
+      if(btn.dataset.armado === '1' && btn._resetConfirmacion) btn._resetConfirmacion();
+    }, 3000);
+  }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function money(n){
+    const num = Number(n) || 0;
+    const rounded = Math.round(Math.abs(num) * 100) / 100;
+    const formatted = rounded.toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+    return (num < 0 ? '-$' : '$') + formatted;
+  }
+  function tipoInfo(id){ return TIPOS.find(t=>t.id===id) || TIPOS[0]; }
+
+  async function loadData(){
+    try{
+      const res = await fetch('/api/estado');
+      if(res.ok){
+        const parsed = await res.json();
+        state.lotes = parsed.lotes || [];
+        state.ventas = parsed.ventas || [];
+        state.gastos = parsed.gastos || [];
+        state.pagos = parsed.pagos || [];
+        state.clientes = parsed.clientes || [];
+        state.ultimosPrecios = parsed.ultimosPrecios || {};
+        state.temaOscuro = parsed.temaOscuro || false;
+        state.lotesCerrados = parsed.lotesCerrados || [];
+      }
+    }catch(e){
+      console.error('Error cargando datos', e);
+    }
+    // normaliza mayúscula inicial en unidades ya guardadas (datos viejos que quedaron en minúscula)
+    state.lotes.forEach(l=>{
+      if(l.unidad) l.unidad = l.unidad.charAt(0).toUpperCase() + l.unidad.slice(1);
+    });
+    loaded = true;
+    aplicarTema();
+    render();
+  }
+
+  async function saveData(intento){
+    intento = intento || 1;
+    try{
+      const res = await fetch('/api/estado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
+      if(!res.ok) throw new Error('Respuesta no OK: ' + res.status);
+    }catch(e){
+      console.error('Error guardando datos (intento ' + intento + ')', e);
+      if(intento < 3){
+        setTimeout(()=>saveData(intento + 1), 1000 * intento);
+      }
+    }
+  }
+
+  function vendidoDeLote(loteId){
+    return state.ventas
+      .filter(v => v.loteId === loteId)
+      .reduce((sum, v) => sum + Number(v.cantidad), 0);
+  }
+
+  function disponibleDeLote(lote){
+    return Number(lote.cantidad) - vendidoDeLote(lote.id);
+  }
+
+  // --- helpers for grouped lotes (folio numbering) ---
+  function agruparLotes(){
+    const grupos = {};
+    state.lotes.forEach(l=>{
+      const key = l.grupoId || l.id;
+      if(!grupos[key]) grupos[key] = [];
+      grupos[key].push(l);
+    });
+    let lista = Object.keys(grupos).map(key=>({ key, items: grupos[key] }));
+    lista.sort((a,b)=> a.key.localeCompare(b.key));
+    lista.forEach((g,idx)=>{ g.folio = idx + 1; });
+    return lista;
+  }
+
+  function folioDeLote(loteId){
+    const grupos = agruparLotes();
+    for(const g of grupos){
+      if(g.items.some(l=>l.id===loteId)) return g.folio;
+    }
+    return null;
+  }
+
+  function grupoDeLote(loteId){
+    const grupos = agruparLotes();
+    return grupos.find(g=>g.items.some(l=>l.id===loteId)) || null;
+  }
+
+  function vendidoDelLote(loteId){
+    return state.ventas
+      .filter(v=>v.loteId===loteId)
+      .reduce((s,v)=>s+Number(v.precioTotal),0);
+  }
+
+  function vendidoDelGrupoLote(grupo){
+    return grupo.items.reduce((s,l)=>s+vendidoDelLote(l.id),0);
+  }
+
+  function gastosDelGrupoLote(grupoKey){
+    return state.gastos
+      .filter(g=>g.destino===grupoKey)
+      .reduce((s,g)=>s+Number(g.monto),0);
+  }
+
+  // --- helpers for grouped ventas (folio, totals, payments) ---
+  function agruparVentas(){
+    const grupos = {};
+    state.ventas.forEach(v=>{
+      const key = v.grupoId || v.id;
+      if(!grupos[key]) grupos[key] = [];
+      grupos[key].push(v);
+    });
+    let lista = Object.keys(grupos).map(key=>{
+      const items = grupos[key];
+      const first = items[0];
+      const total = items.reduce((s,v)=>s+Number(v.precioTotal),0);
+      return { key, items, cliente: first.cliente, fecha: first.fecha, total };
+    });
+    // stable chronological order for folio numbering (by id, which is time-based)
+    lista.sort((a,b)=> a.key.localeCompare(b.key));
+    lista.forEach((g,idx)=>{ g.folio = idx + 1; });
+    return lista;
+  }
+
+  function montoPagadoDeGrupo(grupo){
+    const pagosGrupo = state.pagos.filter(p=>p.grupoId === grupo.key);
+    let pagado = pagosGrupo.reduce((s,p)=>s+Number(p.monto),0);
+    // backward compatibility: old records marked pagado=true directly with no pagos entries
+    if(pagosGrupo.length === 0 && grupo.items.every(v=>v.pagado)){
+      pagado = grupo.total;
+    }
+    return Math.round(pagado * 100) / 100;
+  }
+
+  function entradasDeCaja(){
+    const grupos = agruparVentas();
+    const entradas = [];
+    state.pagos.forEach(p=>{
+      const grupo = grupos.find(g=>g.key===p.grupoId);
+      entradas.push({
+        fecha: p.fecha,
+        concepto: grupo ? `V${grupo.folio} - ${grupo.cliente}` : 'Venta',
+        monto: Number(p.monto)
+      });
+    });
+    // legacy: groups marked fully paid the old way, with no pagos records at all
+    grupos.forEach(g=>{
+      const tienePagos = state.pagos.some(p=>p.grupoId===g.key);
+      if(!tienePagos && g.items.every(v=>v.pagado)){
+        const fechaPago = g.items[0].fechaPago || g.fecha;
+        entradas.push({
+          fecha: fechaPago,
+          concepto: `V${g.folio} - ${g.cliente}`,
+          monto: g.total
+        });
+      }
+    });
+    return entradas;
+  }
+
+  function renderTabs(){
+    tabsEl.innerHTML = TABS.map(t => `
+      <div class="cc-tab ${activeTab===t.id?'active':''}" data-tab="${t.id}"><span style="margin-right:4px;">${t.icon}</span>${t.label}</div>
+    `).join('');
+    tabsEl.querySelectorAll('.cc-tab').forEach(el=>{
+      el.addEventListener('click', ()=>{ activeTab = el.dataset.tab; render(); });
+    });
+  }
+
+  function render(){
+    renderTabs();
+    if(!loaded){ bodyEl.innerHTML = '<div class="cc-loading">Cargando datos...</div>'; return; }
+    if(activeTab === 'resumen') renderResumen();
+    else if(activeTab === 'lotes') renderLotes();
+    else if(activeTab === 'ventas') renderVentas();
+    else if(activeTab === 'clientes') renderClientes();
+    else if(activeTab === 'gastos') renderGastos();
+    else if(activeTab === 'caja') renderCaja();
+  }
+
+  // ---------- RESUMEN ----------
+  function deudasAntiguas(diasLimite){
+    diasLimite = diasLimite || 15;
+    const hoy = new Date(todayStr() + 'T00:00:00');
+    return agruparVentas().map(g=>{
+      const pagado = montoPagadoDeGrupo(g);
+      const pendiente = Math.round((g.total - pagado) * 100) / 100;
+      if(pendiente <= 0.005) return null;
+      const fechaVenta = new Date(g.fecha + 'T00:00:00');
+      const dias = Math.floor((hoy - fechaVenta) / (1000*60*60*24));
+      if(dias < diasLimite) return null;
+      return { cliente: g.cliente, folio: g.folio, dias, pendiente };
+    }).filter(Boolean).sort((a,b)=> b.dias - a.dias);
+  }
+
+  function renderResumen(){
+    const grupos = agruparVentas();
+    const totalPagado = entradasDeCaja().reduce((s,m)=>s+m.monto,0);
+    const totalGastos = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
+    const caja = totalPagado - totalGastos;
+    const porCobrar = grupos.reduce((s,g)=> s + (g.total - montoPagadoDeGrupo(g)), 0);
+
+    const invPorTipo = {};
+    TIPOS.forEach(t=>invPorTipo[t.id]=0);
+    state.lotes.forEach(l=>{ invPorTipo[l.tipo] = (invPorTipo[l.tipo]||0) + disponibleDeLote(l); });
+
+    const vencidas = deudasAntiguas(15);
+
+    bodyEl.innerHTML = `
+      <div class="cc-grid3">
+        <div class="cc-stat ${caja>=0?'pos':'neg'}">
+          <div class="label">Dinero en caja</div>
+          <div class="value">${money(caja)}</div>
+        </div>
+        <div class="cc-stat warn">
+          <div class="label">Por cobrar</div>
+          <div class="value">${money(porCobrar)}</div>
+        </div>
+        <div class="cc-stat">
+          <div class="label">Gastos totales</div>
+          <div class="value">${money(totalGastos)}</div>
+        </div>
+      </div>
+      ${vencidas.length > 0 ? `
+      <div class="cc-card" style="border-color:#B5322C; border-width:2px;">
+        <h3 class="cc-h" style="color:#B5322C;">⚠️ Clientes Con Deuda De Más De 15 Días</h3>
+        ${vencidas.map(v=>`
+          <div class="cc-row-detail">
+            <span>V${v.folio} · ${v.cliente} <span class="cc-meta">(${v.dias} días)</span></span>
+            <strong style="color:#B5322C">${money(v.pendiente)}</strong>
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
+      <div class="cc-card">
+        <h3 class="cc-h">Inventario Disponible</h3>
+        ${TIPOS.map(t=>`
+          <div class="cc-row-detail">
+            <span><span class="cc-tipo-tag ${t.cls}">${t.label}</span></span>
+            <strong>${invPorTipo[t.id]} unidades</strong>
+          </div>
+        `).join('')}
+      </div>
+      <div class="cc-card">
+        <h3 class="cc-h">Respaldo de datos</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">Guarda una copia de todo (lotes, ventas, gastos, clientes) por si algo falla.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="cc-btn small" type="button" id="descargarRespaldoBtn">Descargar respaldo</button>
+          <button class="cc-btn small ghost" type="button" id="restaurarRespaldoBtn">Restaurar respaldo</button>
+          <input type="file" id="restaurarRespaldoInput" accept="application/json" style="display:none;" />
+        </div>
+      </div>
+    `;
+
+    document.getElementById('descargarRespaldoBtn').addEventListener('click', ()=>{
+      const datos = JSON.stringify(state, null, 2);
+      const blob = new Blob([datos], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo-chicharron-${todayStr()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    const restaurarInput = document.getElementById('restaurarRespaldoInput');
+    document.getElementById('restaurarRespaldoBtn').addEventListener('click', (e)=>{
+      armarConfirmacion(e.currentTarget, 'Esto reemplaza todo, clic de nuevo', ()=>{
+        restaurarInput.click();
+      });
+    });
+    restaurarInput.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        try{
+          const datos = JSON.parse(ev.target.result);
+          state.lotes = datos.lotes || [];
+          state.ventas = datos.ventas || [];
+          state.gastos = datos.gastos || [];
+          state.pagos = datos.pagos || [];
+          state.clientes = datos.clientes || [];
+          state.ultimosPrecios = datos.ultimosPrecios || {};
+          render();
+          saveData();
+          alert('Respaldo restaurado correctamente.');
+        }catch(err){
+          alert('Ese archivo no parece ser un respaldo válido.');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // ---------- LOTES ----------
+  function renderLotes(){
+    const lotesOrdenados = [...state.lotes].sort((a,b)=> b.fecha.localeCompare(a.fecha));
+    bodyEl.innerHTML = `
+      <div class="cc-card">
+        <h3 class="cc-h">Registrar producción del día</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">Llena solo los tipos que hiciste ese día, deja en 0 los demás.</p>
+        <form id="loteForm">
+          <div class="cc-form-row">
+            <div class="cc-field full">
+              <label>Fecha</label>
+              <input type="date" id="loteFecha" name="fecha" value="${todayStr()}" required />
+            </div>
+          </div>
+          ${TIPOS.map(t=>`
+            <div class="cc-form-row">
+              <div class="cc-field full" style="flex-direction:row; align-items:center; justify-content:space-between; gap:10px;">
+                <label style="margin:0; display:flex; align-items:center; gap:8px;">
+                  <span class="cc-tipo-tag ${t.cls}">${t.label}</span>
+                </label>
+                <input type="number" id="loteCantidad_${t.id}" name="cantidad_${t.id}" min="0" step="1" placeholder="0" style="max-width:110px;" />
+              </div>
+            </div>
+          `).join('')}
+          <div class="cc-form-row">
+            <div class="cc-field full">
+              <label>Unidad</label>
+              <input type="text" id="loteUnidad" name="unidad" placeholder="Frascos" value="Frascos" />
+            </div>
+          </div>
+          <button class="cc-btn" type="button" id="loteSubmitBtn">+ Guardar producción del día</button>
+        </form>
+      </div>
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${loteFilter==='todas'?'active':''}" data-lote-filter="todas">Todas</div>
+        <div class="cc-filter-btn ${loteFilter==='existencia'?'active':''}" data-lote-filter="existencia">Con Existencia</div>
+        <div class="cc-filter-btn ${loteFilter==='agotados'?'active':''}" data-lote-filter="agotados">Agotados</div>
+      </div>
+
+      <div id="lotesList">
+        ${(()=>{
+          let listaGrupos = agruparLotes()
+            .slice()
+            .sort((a,b)=> b.items[0].fecha.localeCompare(a.items[0].fecha) || b.folio - a.folio);
+
+          if(loteFilter === 'existencia'){
+            listaGrupos = listaGrupos.filter(g=> g.items.some(l=>disponibleDeLote(l) > 0));
+          } else if(loteFilter === 'agotados'){
+            listaGrupos = listaGrupos.filter(g=> g.items.every(l=>disponibleDeLote(l) <= 0));
+          }
+
+          if(listaGrupos.length === 0) return '<div class="cc-empty">No hay lotes en esta categoría.</div>';
+
+          return listaGrupos.map(g=>{
+            const items = g.items;
+            const fecha = items[0].fecha;
+            const itemsHtml = items.map(l=>{
+              const disp = disponibleDeLote(l);
+              const info = tipoInfo(l.tipo);
+              if(editandoLote === l.id){
+                const vendido = vendidoDeLote(l.id);
+                return `
+                  <div class="cc-vitem" style="align-items:center; flex-wrap:wrap;">
+                    <span><span class="cc-tipo-tag ${info.cls}">${info.label}</span></span>
+                    <span style="width:100%; display:flex; gap:8px; margin-top:4px;">
+                      <input type="number" id="editLoteCantidad_${l.id}" min="${vendido}" step="1" value="${l.cantidad}" style="width:80px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
+                      <input type="text" id="editLoteUnidad_${l.id}" value="${l.unidad||''}" style="width:90px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
+                      <button class="cc-btn small" data-guardar-lote="${l.id}">Guardar</button>
+                      <button class="cc-btn small ghost" data-cancelar-edit-lote="${l.id}">Cancelar</button>
+                    </span>
+                  </div>
+                `;
+              }
+              return `
+                <div class="cc-vitem" style="align-items:center;">
+                  <span><span class="cc-tipo-tag ${info.cls}">${info.label}</span></span>
+                  <span>Producido: <strong>${l.cantidad} ${l.unidad||''}</strong> · Disponible: <strong style="color:${disp<=0?'#B5322C':'#5C7A4A'}">${disp} ${l.unidad||''}</strong></span>
+                  <span>
+                    <button class="cc-del" data-editar-lote="${l.id}">Editar</button>
+                    <button class="cc-del" data-del-lote="${l.id}">Eliminar</button>
+                  </span>
+                </div>
+              `;
+            }).join('');
+            const vendidoGrupo = vendidoDelGrupoLote(g);
+            const gastosGrupo = gastosDelGrupoLote(g.key);
+            const utilidadGrupo = Math.round((vendidoGrupo - gastosGrupo) * 100) / 100;
+            const cerrado = state.lotesCerrados.includes(g.key);
+            return `
+              <div class="cc-vgroup" style="${cerrado ? 'opacity:0.7;' : ''}">
+                <div class="top">
+                  <div class="cliente">L${g.folio} · ${fecha} ${cerrado ? '<span class="cc-pill pendiente" style="margin-left:6px;">Cerrado</span>' : ''}</div>
+                  <button class="cc-del" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir Lote' : 'Cerrar Lote'}</button>
+                </div>
+                <div class="items">${itemsHtml}</div>
+                <div class="total-row">
+                  <span>Vendido ${money(vendidoGrupo)} · Gastos ${money(gastosGrupo)}</span>
+                  <span style="color:${utilidadGrupo>=0?'#5C7A4A':'#B5322C'}">Utilidad ${money(utilidadGrupo)}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })()}
+      </div>
+    `;
+
+    bodyEl.querySelectorAll('[data-lote-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ loteFilter = btn.dataset.loteFilter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-cerrar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.toggleCerrarLote;
+        if(state.lotesCerrados.includes(key)){
+          state.lotesCerrados = state.lotesCerrados.filter(k=>k!==key);
+        } else {
+          state.lotesCerrados.push(key);
+        }
+        render();
+        saveData();
+      });
+    });
+
+    document.getElementById('loteSubmitBtn').addEventListener('click', ()=>{
+      const fecha = document.getElementById('loteFecha').value;
+      const unidad = document.getElementById('loteUnidad').value || 'Frascos';
+      const grupoId = uid();
+      const nuevos = [];
+      TIPOS.forEach(t=>{
+        const input = document.getElementById(`loteCantidad_${t.id}`);
+        const cantidad = Number(input.value) || 0;
+        if(cantidad > 0){
+          nuevos.push({
+            id: uid(),
+            grupoId,
+            tipo: t.id,
+            fecha,
+            cantidad,
+            unidad
+          });
+        }
+      });
+      if(!fecha){
+        alert('Elige una fecha.');
+        return;
+      }
+      if(nuevos.length === 0){
+        alert('Escribe al menos una cantidad mayor a 0 en alguno de los tipos.');
+        return;
+      }
+      state.lotes.push(...nuevos);
+      render();
+      saveData();
+    });
+
+    bodyEl.querySelectorAll('[data-del-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.delLote;
+        if(vendidoDeLote(id) > 0){
+          alert('No se puede eliminar: este lote ya tiene ventas registradas.');
+          return;
+        }
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          state.lotes = state.lotes.filter(l=>l.id!==id);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoLote = btn.dataset.editarLote;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoLote = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarLote;
+        const lote = state.lotes.find(l=>l.id===id);
+        if(!lote) return;
+        const cantidad = Number(document.getElementById(`editLoteCantidad_${id}`).value);
+        const unidad = document.getElementById(`editLoteUnidad_${id}`).value || 'Frascos';
+        const vendido = vendidoDeLote(id);
+        if(!cantidad || cantidad < vendido){
+          alert(`La cantidad no puede ser menor a lo ya vendido (${vendido}).`);
+          return;
+        }
+        lote.cantidad = cantidad;
+        lote.unidad = unidad;
+        editandoLote = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- VENTAS ----------
+  function renderVentas(){
+    const lotesPorTipo = {};
+    TIPOS.forEach(t=>{
+      lotesPorTipo[t.id] = state.lotes
+        .filter(l=>l.tipo===t.id && disponibleDeLote(l) > 0)
+        .sort((a,b)=> a.fecha.localeCompare(b.fecha));
+    });
+
+    bodyEl.innerHTML = `
+      <div class="cc-card">
+        <h3 class="cc-h">Registrar venta</h3>
+        ${state.lotes.length===0 ? '<div class="cc-empty">Primero registra un lote en la pestaña Lotes.</div>' : `
+        <p class="cc-meta" style="margin:-6px 0 12px;">Llena solo los tipos que le vendiste a este cliente, deja en blanco los demás.</p>
+        <form id="ventaForm">
+          <div class="cc-form-row">
+            <div class="cc-field">
+              <label>Cliente</label>
+              <input type="text" id="ventaCliente" name="cliente" placeholder="Nombre del cliente" list="clientesDatalist" required />
+              <datalist id="clientesDatalist">
+                ${listaClientes().map(c=>`<option value="${c}"></option>`).join('')}
+              </datalist>
+            </div>
+            <div class="cc-field">
+              <label>Fecha</label>
+              <input type="date" id="ventaFecha" name="fecha" value="${todayStr()}" required />
+            </div>
+          </div>
+
+          ${TIPOS.map(t=>{
+            const disponibles = lotesPorTipo[t.id];
+            const totalDisponible = disponibles.reduce((s,l)=>s+disponibleDeLote(l), 0);
+            if(disponibles.length === 0){
+              return `
+                <div class="cc-venta-row disabled">
+                  <span class="cc-tipo-tag ${t.cls}">${t.label}</span>
+                  <span class="cc-meta">Sin inventario</span>
+                </div>
+              `;
+            }
+            const unidad = disponibles[0].unidad || '';
+            if(tiposExpandido[t.id] === undefined) tiposExpandido[t.id] = true;
+            const expandido = tiposExpandido[t.id];
+            const filasLote = disponibles.map(l=>{
+              const disp = disponibleDeLote(l);
+              const folio = folioDeLote(l.id);
+              return `
+                <div class="cc-venta-row" style="padding-left:6px;">
+                  <span class="cc-meta" style="flex:1 1 120px;">L${folio} (${l.fecha}) · Disp: ${disp} ${unidad}</span>
+                  <span style="display:flex; flex-direction:column; align-items:center;">
+                    <span class="cc-meta" style="font-size:10px;">Cantidad</span>
+                    <input type="number" id="ventaCantidad_${l.id}" min="0" step="1" placeholder="0" title="Cantidad de este lote" style="width:70px;" />
+                  </span>
+                </div>
+              `;
+            }).join('');
+            return `
+              <div class="cc-card" style="background:var(--masa); padding:10px; margin-bottom:10px;">
+                <div class="cc-venta-row" style="background:none; padding:0 0 ${expandido?'6px':'0'}; cursor:pointer;" data-toggle-tipo="${t.id}">
+                  <span style="font-size:12px; color:#8a7b6d; width:14px;">${expandido ? '▾' : '▸'}</span>
+                  <span class="cc-tipo-tag ${t.cls}">${t.label}</span>
+                  <span class="cc-meta" style="flex:1 1 90px;">Disponible: ${totalDisponible} ${unidad}</span>
+                  ${expandido ? `
+                  <span style="display:flex; flex-direction:column; align-items:center;" onclick="event.stopPropagation()">
+                    <span class="cc-meta" style="font-size:10px;">Precio por unidad</span>
+                    <input type="number" id="ventaPrecio_${t.id}" min="0" step="0.01" placeholder="$" value="${state.ultimosPrecios[t.id] != null ? state.ultimosPrecios[t.id] : ''}" title="Precio por unidad (usa 0 si es autoconsumo)" style="width:80px;" />
+                  </span>
+                  ` : ''}
+                </div>
+                ${expandido ? filasLote : ''}
+              </div>
+            `;
+          }).join('')}
+
+          <div class="cc-form-row">
+            <div class="cc-field full" style="background:var(--masa); border-radius:8px; padding:10px 12px; flex-direction:row; justify-content:space-between; align-items:center;">
+              <label style="margin:0;">Total de la venta <span id="ventaFrascosPreview" class="cc-meta">(0 Frascos)</span></label>
+              <strong id="ventaTotalPreview">$0.00</strong>
+            </div>
+          </div>
+          <div class="cc-form-row">
+            <div class="cc-field full cc-checkbox-row">
+              <input type="checkbox" id="pagadoCheck" style="width:auto" />
+              <label for="pagadoCheck" style="margin:0">Ya me pagaron</label>
+            </div>
+          </div>
+          <button class="cc-btn" type="button" id="ventaSubmitBtn">+ Agregar venta</button>
+        </form>
+        `}
+      </div>
+
+      <div class="cc-venta-row" style="margin:0 0 10px;">
+        <input type="text" id="ventaBuscar" placeholder="Buscar por cliente..." value="${ventaBusqueda}" style="flex:1 1 auto; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--white);" />
+      </div>
+
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${ventaFilter==='todas'?'active':''}" data-filter="todas">Todas</div>
+        <div class="cc-filter-btn ${ventaFilter==='pendientes'?'active':''}" data-filter="pendientes">Pendientes</div>
+        <div class="cc-filter-btn ${ventaFilter==='pagadas'?'active':''}" data-filter="pagadas">Pagadas</div>
+      </div>
+
+      <div id="ventasList">
+        ${(()=>{
+          let listaGrupos = agruparVentas().map(g=>({
+            ...g,
+            pagadoMonto: montoPagadoDeGrupo(g)
+          })).sort((a,b)=> b.fecha.localeCompare(a.fecha) || b.folio - a.folio);
+
+          if(ventaBusqueda.trim()){
+            const q = ventaBusqueda.trim().toLowerCase();
+            listaGrupos = listaGrupos.filter(g=>g.cliente.toLowerCase().includes(q));
+          }
+          if(ventaFilter === 'pagadas') listaGrupos = listaGrupos.filter(g=>g.pagadoMonto >= g.total - 0.005);
+          if(ventaFilter === 'pendientes') listaGrupos = listaGrupos.filter(g=>g.pagadoMonto < g.total - 0.005);
+
+          if(listaGrupos.length === 0) return '<div class="cc-empty">No hay ventas en esta categoría.</div>';
+
+          return listaGrupos.map(g=>{
+            const porTipo = {};
+            g.items.forEach(v=>{
+              const lote = state.lotes.find(l=>l.id===v.loteId);
+              const tipoId = lote ? lote.tipo : '—';
+              if(!porTipo[tipoId]) porTipo[tipoId] = { cantidad:0, precioTotal:0, precioUnitario:v.precioUnitario };
+              porTipo[tipoId].cantidad += Number(v.cantidad);
+              porTipo[tipoId].precioTotal += Number(v.precioTotal);
+            });
+            const itemsHtml = Object.keys(porTipo).map(tipoId=>{
+              const info = tipoId !== '—' ? tipoInfo(tipoId) : null;
+              const it = porTipo[tipoId];
+              return `<div class="cc-vitem"><span>${info?info.label:'—'} · ${it.cantidad} × ${money(it.precioUnitario)}</span><span>${money(it.precioTotal)}</span></div>`;
+            }).join('');
+            const totalFrascos = g.items.reduce((s,v)=>s+Number(v.cantidad),0);
+            const saldo = Math.round((g.total - g.pagadoMonto) * 100) / 100;
+            const estaPagado = saldo <= 0.005;
+            const estado = estaPagado ? 'Pagado' : (g.pagadoMonto > 0 ? 'Abono parcial' : 'Pendiente');
+
+            if(editandoVentaItem === g.key){
+              const itemsEditHtml = g.items.map(v=>{
+                const lote = state.lotes.find(l=>l.id===v.loteId);
+                const info = lote ? tipoInfo(lote.tipo) : null;
+                // lotes del mismo tipo, para poder reasignar si se equivocó de lote
+                const lotesMismoTipo = lote ? state.lotes.filter(l=>l.tipo===lote.tipo) : [];
+                return `
+                  <div class="cc-venta-row" style="flex-wrap:wrap;">
+                    <span class="cc-tipo-tag ${info?info.cls:''}">${info?info.label:'—'}</span>
+                    <select id="editVentaLote_${v.id}" style="flex:1 1 140px;">
+                      ${lotesMismoTipo.map(l=>{
+                        const dispPropio = disponibleDeLote(l) + (l.id===v.loteId ? Number(v.cantidad) : 0);
+                        return `<option value="${l.id}" ${l.id===v.loteId?'selected':''}>L${folioDeLote(l.id)} (${l.fecha}) · máx ${dispPropio}</option>`;
+                      }).join('')}
+                    </select>
+                    <input type="number" id="editVentaCantidad_${v.id}" min="0" step="1" value="${v.cantidad}" style="width:70px;" title="Cantidad" />
+                    <input type="number" id="editVentaPrecio_${v.id}" min="0" step="0.01" value="${v.precioUnitario}" style="width:80px;" title="Precio por unidad" />
+                  </div>
+                `;
+              }).join('');
+              return `
+                <div class="cc-vgroup">
+                  <div class="top">
+                    <div>
+                      <div class="cliente">V${g.folio} · ${g.cliente}</div>
+                      <div class="cc-meta">${g.fecha}</div>
+                    </div>
+                  </div>
+                  ${itemsEditHtml}
+                  <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="cc-btn small" data-guardar-venta="${g.key}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-venta="${g.key}">Cancelar</button>
+                  </div>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="cc-vgroup">
+                <div class="top">
+                  <div>
+                    <div class="cliente">V${g.folio} · ${g.cliente}</div>
+                    <div class="cc-meta">${g.fecha}</div>
+                  </div>
+                  <span class="cc-pill ${estaPagado?'pagado':'pendiente'}">${estado}</span>
+                </div>
+                <div class="items">${itemsHtml}</div>
+                <div class="total-row">
+                  <span>Total (${totalFrascos} Frascos)</span>
+                  <span>${money(g.total)}</span>
+                </div>
+                ${g.pagadoMonto > 0 && !estaPagado ? `<div class="cc-row-detail" style="margin-top:4px;"><span>Abonado</span><strong style="color:#5C7A4A">${money(g.pagadoMonto)}</strong></div>` : ''}
+                ${!estaPagado ? `
+                  <div class="cc-row-detail" style="margin-top:2px;"><span>Saldo pendiente</span><strong style="color:#B5322C">${money(saldo)}</strong></div>
+                  <div class="cc-venta-row" style="margin-top:8px;">
+                    <input type="number" id="pagoMonto_${g.key}" min="0" step="0.01" placeholder="Monto a pagar" style="width:110px;" />
+                    <input type="date" id="pagoFecha_${g.key}" value="${todayStr()}" style="width:130px;" />
+                    <button class="cc-btn small" data-pago-abono="${g.key}">Registrar pago</button>
+                    <button class="cc-btn small ghost" data-pago-completo="${g.key}" data-saldo="${saldo}">Pago completo</button>
+                  </div>
+                ` : ''}
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                  <button class="cc-del" data-editar-venta="${g.key}">Editar</button>
+                  <button class="cc-del" data-del-grupo="${g.key}">Eliminar</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })()}
+      </div>
+    `;
+
+    const submitBtn = document.getElementById('ventaSubmitBtn');
+    if(submitBtn){
+      const totalPreview = document.getElementById('ventaTotalPreview');
+      const frascosPreview = document.getElementById('ventaFrascosPreview');
+      const updatePreview = ()=>{
+        let total = 0;
+        let frascos = 0;
+        TIPOS.forEach(t=>{
+          const pInput = document.getElementById(`ventaPrecio_${t.id}`);
+          const precio = pInput ? (Number(pInput.value)||0) : 0;
+          const disponibles = lotesPorTipo[t.id] || [];
+          disponibles.forEach(l=>{
+            const cInput = document.getElementById(`ventaCantidad_${l.id}`);
+            if(cInput){
+              const c = Number(cInput.value)||0;
+              total += c * precio;
+              frascos += c;
+            }
+          });
+        });
+        totalPreview.textContent = money(total);
+        frascosPreview.textContent = `(${frascos} Frascos)`;
+      };
+      TIPOS.forEach(t=>{
+        const pInput = document.getElementById(`ventaPrecio_${t.id}`);
+        const disponibles = lotesPorTipo[t.id] || [];
+        if(pInput) pInput.addEventListener('input', updatePreview);
+        disponibles.forEach(l=>{
+          const cInput = document.getElementById(`ventaCantidad_${l.id}`);
+          if(cInput) cInput.addEventListener('input', updatePreview);
+        });
+      });
+
+      submitBtn.addEventListener('click', ()=>{
+        const cliente = document.getElementById('ventaCliente').value;
+        const fecha = document.getElementById('ventaFecha').value;
+        if(!cliente || !fecha){
+          alert('Llena cliente y fecha.');
+          return;
+        }
+        const pagado = document.getElementById('pagadoCheck').checked;
+        const grupoId = uid();
+        const nuevas = [];
+        for(const t of TIPOS){
+          const precioInput = document.getElementById(`ventaPrecio_${t.id}`);
+          if(!precioInput) continue;
+          const precioUnitario = precioInput.value === '' ? 0 : Number(precioInput.value) || 0;
+          const disponibles = lotesPorTipo[t.id] || [];
+          let algunaCantidad = false;
+          for(const lote of disponibles){
+            const cInput = document.getElementById(`ventaCantidad_${lote.id}`);
+            if(!cInput) continue;
+            const cantidad = Number(cInput.value) || 0;
+            if(cantidad <= 0) continue;
+            algunaCantidad = true;
+            const disp = disponibleDeLote(lote);
+            if(cantidad > disp){
+              alert(`No hay suficiente inventario de ${tipoInfo(t.id).label} en L${folioDeLote(lote.id)}. Disponible: ${disp}`);
+              return;
+            }
+            nuevas.push({
+              id: uid(),
+              grupoId,
+              loteId: lote.id,
+              cliente,
+              fecha,
+              cantidad,
+              precioUnitario,
+              precioTotal: Math.round(cantidad * precioUnitario * 100) / 100
+            });
+          }
+          if(algunaCantidad && precioUnitario > 0){
+            state.ultimosPrecios[t.id] = precioUnitario;
+          }
+        }
+        if(nuevas.length === 0){
+          alert('Escribe cantidad en al menos un lote.');
+          return;
+        }
+        state.ventas.push(...nuevas);
+        registrarClienteSiEsNuevo(cliente);
+        if(pagado){
+          const totalVenta = nuevas.reduce((s,v)=>s+v.precioTotal,0);
+          state.pagos.push({ id: uid(), grupoId, monto: totalVenta, fecha });
+        }
+        render();
+        saveData();
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ ventaFilter = btn.dataset.filter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-tipo]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const tipoId = el.dataset.toggleTipo;
+        tiposExpandido[tipoId] = !tiposExpandido[tipoId];
+        render();
+      });
+    });
+
+    const ventaBuscarInput = document.getElementById('ventaBuscar');
+    if(ventaBuscarInput){
+      ventaBuscarInput.addEventListener('input', (e)=>{
+        ventaBusqueda = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        render();
+        const nuevoInput = document.getElementById('ventaBuscar');
+        if(nuevoInput){
+          nuevoInput.focus();
+          nuevoInput.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-pago-abono]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.pagoAbono;
+        const montoInput = document.getElementById(`pagoMonto_${key}`);
+        const fechaInput = document.getElementById(`pagoFecha_${key}`);
+        const monto = Number(montoInput.value);
+        const fecha = fechaInput.value;
+        if(!monto || monto <= 0){
+          alert('Escribe un monto válido para registrar el pago.');
+          return;
+        }
+        if(!fecha){
+          alert('Elige una fecha para el pago.');
+          return;
+        }
+        state.pagos.push({ id: uid(), grupoId: key, monto, fecha });
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-pago-completo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.pagoCompleto;
+        const saldo = Number(btn.dataset.saldo);
+        const fechaInput = document.getElementById(`pagoFecha_${key}`);
+        const fecha = fechaInput ? fechaInput.value : todayStr();
+        if(saldo <= 0) return;
+        state.pagos.push({ id: uid(), grupoId: key, monto: saldo, fecha: fecha || todayStr() });
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-del-grupo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const key = btn.dataset.delGrupo;
+          state.ventas = state.ventas.filter(v=>(v.grupoId || v.id) !== key);
+          state.pagos = state.pagos.filter(p=>p.grupoId !== key);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoVentaItem = btn.dataset.editarVenta;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoVentaItem = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.guardarVenta;
+        const items = state.ventas.filter(v=>(v.grupoId || v.id) === key);
+        // validate first
+        for(const v of items){
+          const loteSelect = document.getElementById(`editVentaLote_${v.id}`);
+          const cInput = document.getElementById(`editVentaCantidad_${v.id}`);
+          const pInput = document.getElementById(`editVentaPrecio_${v.id}`);
+          if(!cInput || !pInput) continue;
+          const nuevoLoteId = loteSelect ? loteSelect.value : v.loteId;
+          const nuevaCantidad = Number(cInput.value) || 0;
+          const loteNuevo = state.lotes.find(l=>l.id===nuevoLoteId);
+          const yaReservado = (nuevoLoteId === v.loteId) ? Number(v.cantidad) : 0;
+          const dispParaEsteItem = loteNuevo ? disponibleDeLote(loteNuevo) + yaReservado : Infinity;
+          if(nuevaCantidad <= 0){
+            alert('La cantidad debe ser mayor a 0. Si ya no vendiste ese tipo, elimina toda la venta y vuelve a capturarla.');
+            return;
+          }
+          if(nuevaCantidad > dispParaEsteItem){
+            alert(`No hay suficiente inventario en L${folioDeLote(nuevoLoteId)}. Máximo disponible: ${dispParaEsteItem}`);
+            return;
+          }
+        }
+        // apply
+        items.forEach(v=>{
+          const loteSelect = document.getElementById(`editVentaLote_${v.id}`);
+          const cInput = document.getElementById(`editVentaCantidad_${v.id}`);
+          const pInput = document.getElementById(`editVentaPrecio_${v.id}`);
+          if(!cInput || !pInput) return;
+          if(loteSelect) v.loteId = loteSelect.value;
+          v.cantidad = Number(cInput.value) || 0;
+          v.precioUnitario = Number(pInput.value) || 0;
+          v.precioTotal = Math.round(v.cantidad * v.precioUnitario * 100) / 100;
+        });
+        editandoVentaItem = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // --- helpers for clientes catalog ---
+  function listaClientes(){
+    const set = new Set(state.clientes);
+    state.ventas.forEach(v=>{ if(v.cliente) set.add(v.cliente); });
+    return Array.from(set).sort((a,b)=> a.localeCompare(b, 'es'));
+  }
+
+  function registrarClienteSiEsNuevo(nombre){
+    if(nombre && !state.clientes.includes(nombre)){
+      state.clientes.push(nombre);
+    }
+  }
+
+  function resumenPorCliente(){
+    const grupos = agruparVentas();
+    const porCliente = {};
+    listaClientes().forEach(nombre=>{ porCliente[nombre] = { nombre, vendido: 0, pendiente: 0 }; });
+    grupos.forEach(g=>{
+      if(!porCliente[g.cliente]) porCliente[g.cliente] = { nombre: g.cliente, vendido: 0, pendiente: 0 };
+      const pagado = montoPagadoDeGrupo(g);
+      porCliente[g.cliente].vendido += g.total;
+      porCliente[g.cliente].pendiente += Math.max(0, g.total - pagado);
+    });
+    return Object.values(porCliente).sort((a,b)=> b.pendiente - a.pendiente || a.nombre.localeCompare(b.nombre,'es'));
+  }
+
+  function agruparGastos(){
+    let lista = [...state.gastos].sort((a,b)=> a.id.localeCompare(b.id));
+    lista.forEach((g,idx)=>{ g._folio = idx + 1; });
+    return lista;
+  }
+
+  function folioDeGasto(gastoId){
+    const g = agruparGastos().find(x=>x.id===gastoId);
+    return g ? g._folio : null;
+  }
+
+  // ---------- CLIENTES ----------
+  function renderClientes(){
+    const resumen = resumenPorCliente();
+    bodyEl.innerHTML = `
+      <div class="cc-card">
+        <h3 class="cc-h">Agregar Cliente</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">También se agregan solos cuando les vendes por primera vez.</p>
+        <div class="cc-venta-row">
+          <input type="text" id="clienteNombre" placeholder="Nombre del cliente" style="flex:1 1 200px;" />
+          <button class="cc-btn small" type="button" id="clienteSubmitBtn">+ Agregar</button>
+        </div>
+      </div>
+      <div class="cc-venta-row" style="margin:0 0 10px;">
+        <input type="text" id="clienteBuscar" placeholder="Buscar cliente..." value="${clienteBusqueda}" style="flex:1 1 auto; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--white);" />
+      </div>
+      <div id="clientesList">
+        ${(()=>{
+          let lista = resumen;
+          if(clienteBusqueda.trim()){
+            const q = clienteBusqueda.trim().toLowerCase();
+            lista = lista.filter(c=>c.nombre.toLowerCase().includes(q));
+          }
+          if(lista.length===0) return '<div class="cc-empty">No hay clientes que coincidan con tu búsqueda.</div>';
+          return lista.map(c=>{
+            if(editandoCliente === c.nombre){
+              return `
+                <div class="cc-list-item">
+                  <div class="cc-venta-row">
+                    <input type="text" id="editClienteNombre_${c.nombre}" value="${c.nombre}" style="flex:1 1 150px;" list="clientesDatalistEdit" />
+                    <button class="cc-btn small" data-guardar-cliente="${c.nombre}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-cliente="${c.nombre}">Cancelar</button>
+                  </div>
+                  <p class="cc-meta" style="margin:6px 0 0;">Si le pones el nombre de un cliente que ya existe, se fusionan y se junta todo su historial.</p>
+                </div>
+              `;
+            }
+            return `
+            <div class="cc-list-item">
+              <div class="top">
+                <strong>${c.nombre}</strong>
+                <div style="display:flex; gap:8px;">
+                  <button class="cc-del" data-renombrar-cliente="${c.nombre}">Renombrar / Fusionar</button>
+                  ${c.pendiente <= 0.005 && !state.ventas.some(v=>v.cliente===c.nombre) ? `<button class="cc-del" data-del-cliente="${c.nombre}">Eliminar</button>` : ''}
+                </div>
+              </div>
+              <div class="cc-row-detail"><span>Total vendido histórico</span><strong>${money(c.vendido)}</strong></div>
+              <div class="cc-row-detail"><span>Le debe</span><strong style="color:${c.pendiente>0?'#B5322C':'#5C7A4A'}">${money(c.pendiente)}</strong></div>
+            </div>
+          `;}).join('');
+        })()}
+      </div>
+      <datalist id="clientesDatalistEdit">
+        ${listaClientes().map(c=>`<option value="${c}"></option>`).join('')}
+      </datalist>
+    `;
+
+    document.getElementById('clienteSubmitBtn').addEventListener('click', ()=>{
+      const input = document.getElementById('clienteNombre');
+      const nombre = input.value.trim();
+      if(!nombre){
+        alert('Escribe un nombre.');
+        return;
+      }
+      if(state.clientes.includes(nombre)){
+        alert('Ese cliente ya está en la lista.');
+        return;
+      }
+      state.clientes.push(nombre);
+      render();
+      saveData();
+    });
+
+    const clienteBuscarInput = document.getElementById('clienteBuscar');
+    if(clienteBuscarInput){
+      clienteBuscarInput.addEventListener('input', (e)=>{
+        clienteBusqueda = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        render();
+        const nuevoInput = document.getElementById('clienteBuscar');
+        if(nuevoInput){
+          nuevoInput.focus();
+          nuevoInput.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-del-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const nombre = btn.dataset.delCliente;
+          state.clientes = state.clientes.filter(c=>c!==nombre);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-renombrar-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoCliente = btn.dataset.renombrarCliente;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoCliente = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const nombreViejo = btn.dataset.guardarCliente;
+        const input = document.getElementById(`editClienteNombre_${nombreViejo}`);
+        const nombreNuevo = input.value.trim();
+        if(!nombreNuevo){
+          alert('Escribe un nombre válido.');
+          return;
+        }
+        if(nombreNuevo !== nombreViejo){
+          state.ventas.forEach(v=>{ if(v.cliente === nombreViejo) v.cliente = nombreNuevo; });
+          state.clientes = state.clientes.filter(c=>c !== nombreViejo);
+          registrarClienteSiEsNuevo(nombreNuevo);
+        }
+        editandoCliente = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- GASTOS ----------
+  function renderGastos(){
+    const gastosOrdenados = [...state.gastos].sort((a,b)=> b.fecha.localeCompare(a.fecha));
+    const gruposLotes = agruparLotes().filter(g=> !state.lotesCerrados.includes(g.key));
+    const opcionesLote = gruposLotes.map(g=>({
+      key: g.key,
+      label: `L${g.folio} (${g.items[0].fecha})`
+    }));
+
+    bodyEl.innerHTML = `
+      <div class="cc-card">
+        <h3 class="cc-h">Registrar gasto</h3>
+        <form id="gastoForm">
+          <div class="cc-form-row">
+            <div class="cc-field">
+              <label>Fecha</label>
+              <input type="date" id="gastoFecha" name="fecha" value="${todayStr()}" required />
+            </div>
+            <div class="cc-field">
+              <label>Monto</label>
+              <input type="number" id="gastoMonto" name="monto" min="0" step="0.01" placeholder="$" required />
+            </div>
+          </div>
+          <div class="cc-form-row">
+            <div class="cc-field full">
+              <label>¿En qué se gastó?</label>
+              <input type="text" id="gastoConcepto" name="concepto" placeholder="Ej. chile, gas, Frascos" required />
+            </div>
+          </div>
+          <div class="cc-form-row">
+            <div class="cc-field full">
+              <label>¿A dónde va este gasto?</label>
+              <select id="gastoDestino">
+                <option value="general">General (no aplica a un lote)</option>
+                <option value="retiro">Retiro de utilidad (pago a nosotros)</option>
+                ${opcionesLote.length > 0 ? `<optgroup label="Asignar a un lote">
+                  ${opcionesLote.map(o=>`<option value="${o.key}">${o.label}</option>`).join('')}
+                </optgroup>` : ''}
+              </select>
+            </div>
+          </div>
+          <button class="cc-btn" type="button" id="gastoSubmitBtn">+ Agregar gasto</button>
+        </form>
+      </div>
+      <div id="gastosList">
+        ${gastosOrdenados.length===0 ? '<div class="cc-empty">Aún no hay gastos registrados.</div>' :
+          gastosOrdenados.map(g=>{
+            let destinoLabel = 'General';
+            if(g.destino === 'retiro') destinoLabel = 'Retiro de utilidad';
+            else if(g.destino && g.destino !== 'general'){
+              const grupo = agruparLotes().find(gr=>gr.key === g.destino);
+              destinoLabel = grupo ? `L${grupo.folio}` : 'Lote eliminado';
+            }
+            if(editandoGasto === g.id){
+              return `
+              <div class="cc-list-item">
+                <div class="cc-form-row">
+                  <div class="cc-field">
+                    <label>Fecha</label>
+                    <input type="date" id="editGastoFecha_${g.id}" value="${g.fecha}" />
+                  </div>
+                  <div class="cc-field">
+                    <label>Monto</label>
+                    <input type="number" id="editGastoMonto_${g.id}" min="0" step="0.01" value="${g.monto}" />
+                  </div>
+                </div>
+                <div class="cc-form-row">
+                  <div class="cc-field full">
+                    <label>¿En qué se gastó?</label>
+                    <input type="text" id="editGastoConcepto_${g.id}" value="${g.concepto}" />
+                  </div>
+                </div>
+                <div class="cc-form-row">
+                  <div class="cc-field full">
+                    <label>¿A dónde va?</label>
+                    <select id="editGastoDestino_${g.id}">
+                      <option value="general" ${g.destino==='general'?'selected':''}>General</option>
+                      <option value="retiro" ${g.destino==='retiro'?'selected':''}>Retiro de utilidad</option>
+                      ${opcionesLote.map(o=>`<option value="${o.key}" ${g.destino===o.key?'selected':''}>${o.label}</option>`).join('')}
+                      ${(g.destino && g.destino!=='general' && g.destino!=='retiro' && !opcionesLote.some(o=>o.key===g.destino)) ? (()=>{
+                        const grupoCerrado = agruparLotes().find(gr=>gr.key===g.destino);
+                        return grupoCerrado ? `<option value="${g.destino}" selected>L${grupoCerrado.folio} (Cerrado)</option>` : '';
+                      })() : ''}
+                    </select>
+                  </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="cc-btn small" data-guardar-gasto="${g.id}">Guardar</button>
+                  <button class="cc-btn small ghost" data-cancelar-edit-gasto="${g.id}">Cancelar</button>
+                </div>
+              </div>
+              `;
+            }
+            return `
+            <div class="cc-list-item">
+              <div class="top">
+                <strong>G${folioDeGasto(g.id)} · ${g.concepto}</strong>
+                <div style="display:flex; gap:8px;">
+                  <button class="cc-del" data-editar-gasto="${g.id}">Editar</button>
+                  <button class="cc-del" data-del-gasto="${g.id}">Eliminar</button>
+                </div>
+              </div>
+              <div class="cc-meta">${g.fecha} · ${destinoLabel}</div>
+              <div class="cc-row-detail"><span>Monto</span><strong style="color:#B5322C">${money(g.monto)}</strong></div>
+            </div>
+          `;}).join('')
+        }
+      </div>
+    `;
+
+    document.getElementById('gastoSubmitBtn').addEventListener('click', ()=>{
+      const fecha = document.getElementById('gastoFecha').value;
+      const monto = Number(document.getElementById('gastoMonto').value);
+      const concepto = document.getElementById('gastoConcepto').value;
+      const destino = document.getElementById('gastoDestino').value;
+      if(!fecha || !monto || !concepto){
+        alert('Llena fecha, monto y en qué se gastó.');
+        return;
+      }
+      const nuevo = {
+        id: uid(),
+        fecha,
+        concepto,
+        monto,
+        destino
+      };
+      state.gastos.push(nuevo);
+      render();
+      saveData();
+    });
+
+    bodyEl.querySelectorAll('[data-del-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          state.gastos = state.gastos.filter(g=>g.id!==btn.dataset.delGasto);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoGasto = btn.dataset.editarGasto;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoGasto = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarGasto;
+        const gasto = state.gastos.find(g=>g.id===id);
+        if(!gasto) return;
+        const fecha = document.getElementById(`editGastoFecha_${id}`).value;
+        const monto = Number(document.getElementById(`editGastoMonto_${id}`).value);
+        const concepto = document.getElementById(`editGastoConcepto_${id}`).value;
+        const destino = document.getElementById(`editGastoDestino_${id}`).value;
+        if(!fecha || !monto || !concepto){
+          alert('Llena fecha, monto y en qué se gastó.');
+          return;
+        }
+        gasto.fecha = fecha;
+        gasto.monto = monto;
+        gasto.concepto = concepto;
+        gasto.destino = destino;
+        editandoGasto = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- CAJA ----------
+  function renderCaja(){
+    const entradas = entradasDeCaja().map(e=>({...e, tipo:'entrada'}));
+    const salidas = state.gastos.map(g=>({
+      fecha: g.fecha,
+      tipo: 'salida',
+      concepto: `G${folioDeGasto(g.id)} - ${g.concepto}`,
+      monto: Number(g.monto)
+    }));
+
+    const movimientos = [...entradas, ...salidas].sort((a,b)=> a.fecha.localeCompare(b.fecha) || 0);
+    let running = 0;
+    const conBalance = movimientos.map(m=>{
+      running += (m.tipo==='entrada' ? m.monto : -m.monto);
+      return {...m, balance: running};
+    });
+    const saldoActual = running;
+    const totalEntradas = entradas.reduce((s,m)=>s+m.monto,0);
+    const totalSalidas = salidas.reduce((s,m)=>s+m.monto,0);
+
+    const paraMostrar = [...conBalance].reverse();
+
+    bodyEl.innerHTML = `
+      <div class="cc-grid3">
+        <div class="cc-stat ${saldoActual>=0?'pos':'neg'}">
+          <div class="label">Saldo en caja</div>
+          <div class="value">${money(saldoActual)}</div>
+        </div>
+        <div class="cc-stat pos">
+          <div class="label">Entradas totales</div>
+          <div class="value">${money(totalEntradas)}</div>
+        </div>
+        <div class="cc-stat neg">
+          <div class="label">Salidas totales</div>
+          <div class="value">${money(totalSalidas)}</div>
+        </div>
+      </div>
+      <div class="cc-card">
+        <h3 class="cc-h">Movimientos</h3>
+        ${paraMostrar.length===0 ? '<div class="cc-empty">Aún no hay movimientos. Marca ventas como pagadas o registra gastos.</div>' :
+          paraMostrar.map(m=>`
+            <div class="cc-list-item">
+              <div class="top">
+                <span class="cc-pill ${m.tipo==='entrada'?'pagado':'pendiente'}">${m.tipo==='entrada'?'Entrada':'Salida'}</span>
+                <strong style="color:${m.tipo==='entrada'?'#5C7A4A':'#B5322C'}">${m.tipo==='entrada'?'+':'-'}${money(m.monto)}</strong>
+              </div>
+              <div class="cc-meta">${m.fecha} · ${m.concepto}</div>
+              <div class="cc-row-detail"><span>Saldo después</span><strong>${money(m.balance)}</strong></div>
+            </div>
+          `).join('')
+        }
+      </div>
+    `;
+  }
+
+  function aplicarTema(){
+    app.classList.toggle('dark', !!state.temaOscuro);
+    const btn = document.getElementById('temaToggleBtn');
+    if(btn) btn.textContent = state.temaOscuro ? '☀️' : '🌙';
+  }
+
+  document.getElementById('temaToggleBtn').addEventListener('click', ()=>{
+    state.temaOscuro = !state.temaOscuro;
+    aplicarTema();
+    saveData();
+  });
+
+  loadData();
+})();
+</script>
+</body>
+</html>
