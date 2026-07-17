@@ -285,6 +285,7 @@
   let editandoGasto = null;
   let editandoLote = null;
   let editandoVentaItem = null;
+  let editandoPago = null;
   let editandoCliente = null;
   let loaded = false;
   let sesion = null;
@@ -1026,27 +1027,24 @@
               return `
                 <div class="cc-venta-row" style="padding-left:6px;">
                   <span class="cc-meta" style="flex:1 1 120px;">L${folio} (${l.fecha}) · Disp: ${disp} ${unidad}</span>
-                  <span style="display:flex; flex-direction:column; align-items:center;">
-                    <span class="cc-meta" style="font-size:10px;">Cantidad</span>
-                    <input type="number" id="ventaCantidad_${l.id}" min="0" step="1" placeholder="0" title="Cantidad de este lote" style="width:70px;" />
-                  </span>
+                  <input type="number" id="ventaCantidad_${l.id}" min="0" step="1" placeholder="0" title="Cantidad de este lote" style="width:70px;" />
                 </div>
               `;
             }).join('');
             return `
               <div class="cc-card" style="background:var(--masa); padding:10px; margin-bottom:10px;">
-                <div class="cc-venta-row" style="background:none; padding:0 0 ${expandido?'6px':'0'}; cursor:pointer;" data-toggle-tipo="${t.id}">
+                <div class="cc-venta-row" style="background:none; padding:0; cursor:pointer;" data-toggle-tipo="${t.id}">
                   <span style="font-size:12px; color:#8a7b6d; width:14px;">${expandido ? '▾' : '▸'}</span>
                   <span class="cc-tipo-tag ${t.cls}">${t.label}</span>
                   <span class="cc-meta" style="flex:1 1 90px;">Disponible: ${totalDisponible} ${unidad}</span>
-                  ${expandido ? `
-                  <span style="display:flex; flex-direction:column; align-items:center;" onclick="event.stopPropagation()">
-                    <span class="cc-meta" style="font-size:10px;">Precio por unidad</span>
-                    <input type="number" id="ventaPrecio_${t.id}" min="0" step="0.01" placeholder="$" value="${state.ultimosPrecios[t.id] != null ? state.ultimosPrecios[t.id] : ''}" title="Precio por unidad (usa 0 si es autoconsumo)" style="width:80px;" />
-                  </span>
-                  ` : ''}
                 </div>
-                ${expandido ? filasLote : ''}
+                ${expandido ? `
+                ${filasLote}
+                <div class="cc-venta-row" style="padding-left:6px;">
+                  <span class="cc-meta" style="flex:1 1 120px;">Precio por unidad</span>
+                  <input type="number" id="ventaPrecio_${t.id}" min="0" step="0.01" placeholder="$" value="${state.ultimosPrecios[t.id] != null ? state.ultimosPrecios[t.id] : ''}" title="Precio por unidad (usa 0 si es autoconsumo)" style="width:70px;" />
+                </div>
+                ` : ''}
               </div>
             `;
           }).join('')}
@@ -1151,6 +1149,32 @@
               `;
             }
 
+            const pagosGrupo = state.pagos.filter(p=>p.grupoId===g.key).sort((a,b)=> a.fecha.localeCompare(b.fecha));
+            const pagosHtml = pagosGrupo.map(p=>{
+              if(editandoPago === p.id){
+                return `
+                  <div class="cc-venta-row" style="margin-top:6px;">
+                    <input type="number" id="editPagoMonto_${p.id}" min="0" step="0.01" value="${p.monto}" style="width:100px;" />
+                    <input type="date" id="editPagoFecha_${p.id}" value="${p.fecha}" style="width:130px;" />
+                    <button class="cc-btn small" data-guardar-pago="${p.id}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-pago="${p.id}">Cancelar</button>
+                  </div>
+                `;
+              }
+              return `
+                <div class="cc-vitem" style="align-items:center;">
+                  <span>Pago del ${p.fecha}</span>
+                  <span>${money(p.monto)}</span>
+                  ${esAdmin() ? `
+                  <span>
+                    <button class="cc-del" data-editar-pago="${p.id}">Editar</button>
+                    <button class="cc-del" data-del-pago="${p.id}">Eliminar</button>
+                  </span>
+                  ` : '<span></span>'}
+                </div>
+              `;
+            }).join('');
+
             return `
               <div class="cc-vgroup">
                 <div class="top">
@@ -1166,6 +1190,7 @@
                   <span>${money(g.total)}</span>
                 </div>
                 ${g.pagadoMonto > 0 && !estaPagado ? `<div class="cc-row-detail" style="margin-top:4px;"><span>Abonado</span><strong style="color:#5C7A4A">${money(g.pagadoMonto)}</strong></div>` : ''}
+                ${pagosGrupo.length > 0 ? `<div style="margin-top:6px;">${pagosHtml}</div>` : ''}
                 ${!estaPagado ? `
                   <div class="cc-row-detail" style="margin-top:2px;"><span>Saldo pendiente</span><strong style="color:#B5322C">${money(saldo)}</strong></div>
                   <div class="cc-venta-row" style="margin-top:8px;">
