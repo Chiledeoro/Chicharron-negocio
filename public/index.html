@@ -254,9 +254,10 @@
 
 <div class="cc-app" id="ccApp">
   <div class="cc-header" style="position:relative;">
-    <button class="cc-theme-toggle" id="temaToggleBtn" type="button">🌙</button>
+    <button class="cc-theme-toggle" id="temaToggleBtn" type="button" style="right:16px;">🌙</button>
+    <button class="cc-theme-toggle" id="logoutBtn" type="button" style="right:70px; display:none;">Salir</button>
     <h1>🌶️ Chicharrón de Chile</h1>
-    <p>Control de lotes, ventas y caja</p>
+    <p id="ccUsuarioActual">Control de lotes, ventas y caja</p>
   </div>
   <div class="cc-tabs" id="ccTabs"></div>
   <div class="cc-body" id="ccBody">
@@ -279,11 +280,15 @@
   let ventaBusqueda = '';
   let clienteBusqueda = '';
   let tiposExpandido = {};
+  let formularioVentaAbierto = false;
+  let formularioLoteAbierto = false;
   let editandoGasto = null;
   let editandoLote = null;
   let editandoVentaItem = null;
   let editandoCliente = null;
   let loaded = false;
+  let sesion = null;
+  let errorLogin = '';
 
   const app = document.getElementById('ccApp');
   const tabsEl = document.getElementById('ccTabs');
@@ -295,7 +300,8 @@
     {id:'ventas', label:'Ventas', icon:'🌶️'},
     {id:'clientes', label:'Clientes', icon:'👥'},
     {id:'gastos', label:'Gastos', icon:'💸'},
-    {id:'caja', label:'Caja', icon:'💰'}
+    {id:'caja', label:'Caja', icon:'💰'},
+    {id:'usuarios', label:'Usuarios', icon:'🔑', soloAdmin:true}
   ];
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -332,9 +338,37 @@
   }
   function tipoInfo(id){ return TIPOS.find(t=>t.id===id) || TIPOS[0]; }
 
+  // ---------- Sesion / autenticacion ----------
+  function esAdmin(){ return !!(sesion && sesion.rol === 'admin'); }
+
+  function guardarSesion(datos){
+    sesion = datos;
+    localStorage.setItem('cc_sesion', JSON.stringify(datos));
+  }
+
+  function cerrarSesion(){
+    sesion = null;
+    localStorage.removeItem('cc_sesion');
+    activeTab = 'resumen';
+    render();
+  }
+
+  async function apiFetch(url, options){
+    options = options || {};
+    options.headers = options.headers || {};
+    if(sesion && sesion.token){
+      options.headers['Authorization'] = 'Bearer ' + sesion.token;
+    }
+    const res = await fetch(url, options);
+    if(res.status === 401){
+      cerrarSesion();
+    }
+    return res;
+  }
+
   async function loadData(){
     try{
-      const res = await fetch('/api/estado');
+      const res = await apiFetch('/api/estado');
       if(res.ok){
         const parsed = await res.json();
         state.lotes = parsed.lotes || [];
@@ -361,11 +395,17 @@
   async function saveData(intento){
     intento = intento || 1;
     try{
-      const res = await fetch('/api/estado', {
+      const res = await apiFetch('/api/estado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state)
       });
+      if(res.status === 403){
+        const cuerpo = await res.json().catch(()=>({}));
+        alert(cuerpo.error || 'Tu cuenta no tiene permiso para hacer ese cambio.');
+        await loadData(); // recupera los datos reales, deshaciendo el intento bloqueado
+        return;
+      }
       if(!res.ok) throw new Error('Respuesta no OK: ' + res.status);
     }catch(e){
       console.error('Error guardando datos (intento ' + intento + ')', e);
@@ -485,7 +525,9 @@
   }
 
   function renderTabs(){
-    tabsEl.innerHTML = TABS.map(t => `
+    if(!sesion){ tabsEl.innerHTML = ''; return; }
+    const tabsVisibles = TABS.filter(t => !t.soloAdmin || esAdmin());
+    tabsEl.innerHTML = tabsVisibles.map(t => `
       <div class="cc-tab ${activeTab===t.id?'active':''}" data-tab="${t.id}"><span style="margin-right:4px;">${t.icon}</span>${t.label}</div>
     `).join('');
     tabsEl.querySelectorAll('.cc-tab').forEach(el=>{
@@ -493,8 +535,71 @@
     });
   }
 
+  function renderLogin(){
+    bodyEl.innerHTML = `
+      <div class="cc-card" style="max-width:340px; margin:20px auto;">
+        <h3 class="cc-h">Iniciar Sesión</h3>
+        <div class="cc-field" style="margin-bottom:10px;">
+          <label>Usuario</label>
+          <input type="text" id="loginUsuario" placeholder="Tu usuario" />
+        </div>
+        <div class="cc-field" style="margin-bottom:10px;">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" />
+        </div>
+        ${errorLogin ? `<p style="color:#B5322C; font-size:13px; margin:0 0 10px;">${errorLogin}</p>` : ''}
+        <button class="cc-btn" type="button" id="loginBtn">Entrar</button>
+      </div>
+    `;
+    const intentar = async ()=>{
+      const usuario = document.getElementById('loginUsuario').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if(!usuario || !password){
+        errorLogin = 'Escribe tu usuario y contraseña.';
+        render();
+        return;
+      }
+      try{
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario, password })
+        });
+        const datos = await res.json();
+        if(!res.ok){
+          errorLogin = datos.error || 'No se pudo iniciar sesión.';
+          render();
+          return;
+        }
+        errorLogin = '';
+        guardarSesion(datos);
+        loaded = false;
+        render();
+        loadData();
+      }catch(e){
+        errorLogin = 'No se pudo conectar con el servidor.';
+        render();
+      }
+    };
+    document.getElementById('loginBtn').addEventListener('click', intentar);
+    document.getElementById('loginPassword').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') intentar();
+    });
+  }
+
   function render(){
+    const logoutBtn = document.getElementById('logoutBtn');
+    const usuarioActualEl = document.getElementById('ccUsuarioActual');
+    if(sesion){
+      logoutBtn.style.display = 'block';
+      logoutBtn.onclick = cerrarSesion;
+      usuarioActualEl.textContent = `${sesion.nombre} (${sesion.rol === 'admin' ? 'Administrador' : 'Usuario'})`;
+    } else {
+      logoutBtn.style.display = 'none';
+      usuarioActualEl.textContent = 'Control de lotes, ventas y caja';
+    }
     renderTabs();
+    if(!sesion){ renderLogin(); return; }
     if(!loaded){ bodyEl.innerHTML = '<div class="cc-loading">Cargando datos...</div>'; return; }
     if(activeTab === 'resumen') renderResumen();
     else if(activeTab === 'lotes') renderLotes();
@@ -502,6 +607,7 @@
     else if(activeTab === 'clientes') renderClientes();
     else if(activeTab === 'gastos') renderGastos();
     else if(activeTab === 'caja') renderCaja();
+    else if(activeTab === 'usuarios'){ renderUsuarios(); if(listaUsuarios.length===0) cargarUsuarios(); }
   }
 
   // ---------- RESUMEN ----------
@@ -572,7 +678,7 @@
         <p class="cc-meta" style="margin:-6px 0 12px;">Guarda una copia de todo (lotes, ventas, gastos, clientes) por si algo falla.</p>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="cc-btn small" type="button" id="descargarRespaldoBtn">Descargar respaldo</button>
-          <button class="cc-btn small ghost" type="button" id="restaurarRespaldoBtn">Restaurar respaldo</button>
+          ${esAdmin() ? `<button class="cc-btn small ghost" type="button" id="restaurarRespaldoBtn">Restaurar respaldo</button>` : ''}
           <input type="file" id="restaurarRespaldoInput" accept="application/json" style="display:none;" />
         </div>
       </div>
@@ -592,11 +698,14 @@
     });
 
     const restaurarInput = document.getElementById('restaurarRespaldoInput');
-    document.getElementById('restaurarRespaldoBtn').addEventListener('click', (e)=>{
-      armarConfirmacion(e.currentTarget, 'Esto reemplaza todo, clic de nuevo', ()=>{
-        restaurarInput.click();
+    const restaurarBtn = document.getElementById('restaurarRespaldoBtn');
+    if(restaurarBtn){
+      restaurarBtn.addEventListener('click', (e)=>{
+        armarConfirmacion(e.currentTarget, 'Esto reemplaza todo, clic de nuevo', ()=>{
+          restaurarInput.click();
+        });
       });
-    });
+    }
     restaurarInput.addEventListener('change', (e)=>{
       const file = e.target.files[0];
       if(!file) return;
@@ -625,9 +734,13 @@
   function renderLotes(){
     const lotesOrdenados = [...state.lotes].sort((a,b)=> b.fecha.localeCompare(a.fecha));
     bodyEl.innerHTML = `
-      <div class="cc-card">
-        <h3 class="cc-h">Registrar producción del día</h3>
-        <p class="cc-meta" style="margin:-6px 0 12px;">Llena solo los tipos que hiciste ese día, deja en 0 los demás.</p>
+      <div class="cc-card" style="padding:${formularioLoteAbierto ? '16px' : '10px 16px'};">
+        <div class="cc-venta-row" style="background:none; padding:0; cursor:pointer;" data-toggle-form-lote="1">
+          <span style="font-size:13px; color:#8a7b6d; width:16px;">${formularioLoteAbierto ? '▾' : '▸'}</span>
+          <h3 class="cc-h" style="margin:0;">+ Registrar Producción Del Día</h3>
+        </div>
+        ${formularioLoteAbierto ? `
+        <p class="cc-meta" style="margin:8px 0 12px;">Llena solo los tipos que hiciste ese día, deja en 0 los demás.</p>
         <form id="loteForm">
           <div class="cc-form-row">
             <div class="cc-field full">
@@ -653,6 +766,7 @@
           </div>
           <button class="cc-btn" type="button" id="loteSubmitBtn">+ Guardar producción del día</button>
         </form>
+        ` : ''}
       </div>
       <div class="cc-filterbar">
         <div class="cc-filter-btn ${loteFilter==='todas'?'active':''}" data-lote-filter="todas">Todas</div>
@@ -699,8 +813,8 @@
                   <span><span class="cc-tipo-tag ${info.cls}">${info.label}</span></span>
                   <span>Producido: <strong>${l.cantidad} ${l.unidad||''}</strong> · Disponible: <strong style="color:${disp<=0?'#B5322C':'#5C7A4A'}">${disp} ${l.unidad||''}</strong></span>
                   <span>
-                    <button class="cc-del" data-editar-lote="${l.id}">Editar</button>
-                    <button class="cc-del" data-del-lote="${l.id}">Eliminar</button>
+                    ${esAdmin() ? `<button class="cc-del" data-editar-lote="${l.id}">Editar</button>` : ''}
+                    ${esAdmin() ? `<button class="cc-del" data-del-lote="${l.id}">Eliminar</button>` : ''}
                   </span>
                 </div>
               `;
@@ -731,6 +845,14 @@
       btn.addEventListener('click', ()=>{ loteFilter = btn.dataset.loteFilter; render(); });
     });
 
+    const toggleFormLoteBtn = bodyEl.querySelector('[data-toggle-form-lote]');
+    if(toggleFormLoteBtn){
+      toggleFormLoteBtn.addEventListener('click', ()=>{
+        formularioLoteAbierto = !formularioLoteAbierto;
+        render();
+      });
+    }
+
     bodyEl.querySelectorAll('[data-toggle-cerrar-lote]').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const key = btn.dataset.toggleCerrarLote;
@@ -744,7 +866,8 @@
       });
     });
 
-    document.getElementById('loteSubmitBtn').addEventListener('click', ()=>{
+    const loteSubmitBtn = document.getElementById('loteSubmitBtn');
+    if(loteSubmitBtn) loteSubmitBtn.addEventListener('click', ()=>{
       const fecha = document.getElementById('loteFecha').value;
       const unidad = document.getElementById('loteUnidad').value || 'Frascos';
       const grupoId = uid();
@@ -836,10 +959,14 @@
     });
 
     bodyEl.innerHTML = `
-      <div class="cc-card">
-        <h3 class="cc-h">Registrar venta</h3>
+      <div class="cc-card" style="padding:${formularioVentaAbierto ? '16px' : '10px 16px'};">
+        <div class="cc-venta-row" style="background:none; padding:0; cursor:pointer;" data-toggle-form-venta="1">
+          <span style="font-size:13px; color:#8a7b6d; width:16px;">${formularioVentaAbierto ? '▾' : '▸'}</span>
+          <h3 class="cc-h" style="margin:0;">+ Registrar Venta</h3>
+        </div>
+        ${formularioVentaAbierto ? `
         ${state.lotes.length===0 ? '<div class="cc-empty">Primero registra un lote en la pestaña Lotes.</div>' : `
-        <p class="cc-meta" style="margin:-6px 0 12px;">Llena solo los tipos que le vendiste a este cliente, deja en blanco los demás.</p>
+        <p class="cc-meta" style="margin:8px 0 12px;">Llena solo los tipos que le vendiste a este cliente, deja en blanco los demás.</p>
         <form id="ventaForm">
           <div class="cc-form-row">
             <div class="cc-field">
@@ -915,6 +1042,7 @@
           <button class="cc-btn" type="button" id="ventaSubmitBtn">+ Agregar venta</button>
         </form>
         `}
+        ` : ''}
       </div>
 
       <div class="cc-venta-row" style="margin:0 0 10px;">
@@ -1024,8 +1152,8 @@
                   </div>
                 ` : ''}
                 <div style="display:flex; gap:8px; margin-top:8px;">
-                  <button class="cc-del" data-editar-venta="${g.key}">Editar</button>
-                  <button class="cc-del" data-del-grupo="${g.key}">Eliminar</button>
+                  ${esAdmin() ? `<button class="cc-del" data-editar-venta="${g.key}">Editar</button>` : ''}
+                  ${esAdmin() ? `<button class="cc-del" data-del-grupo="${g.key}">Eliminar</button>` : ''}
                 </div>
               </div>
             `;
@@ -1135,6 +1263,14 @@
         render();
       });
     });
+
+    const toggleFormBtn = bodyEl.querySelector('[data-toggle-form-venta]');
+    if(toggleFormBtn){
+      toggleFormBtn.addEventListener('click', ()=>{
+        formularioVentaAbierto = !formularioVentaAbierto;
+        render();
+      });
+    }
 
     const ventaBuscarInput = document.getElementById('ventaBuscar');
     if(ventaBuscarInput){
@@ -1330,8 +1466,8 @@
               <div class="top">
                 <strong>${c.nombre}</strong>
                 <div style="display:flex; gap:8px;">
-                  <button class="cc-del" data-renombrar-cliente="${c.nombre}">Renombrar / Fusionar</button>
-                  ${c.pendiente <= 0.005 && !state.ventas.some(v=>v.cliente===c.nombre) ? `<button class="cc-del" data-del-cliente="${c.nombre}">Eliminar</button>` : ''}
+                  ${esAdmin() ? `<button class="cc-del" data-renombrar-cliente="${c.nombre}">Renombrar / Fusionar</button>` : ''}
+                  ${esAdmin() && c.pendiente <= 0.005 && !state.ventas.some(v=>v.cliente===c.nombre) ? `<button class="cc-del" data-del-cliente="${c.nombre}">Eliminar</button>` : ''}
                 </div>
               </div>
               <div class="cc-row-detail"><span>Total vendido histórico</span><strong>${money(c.vendido)}</strong></div>
@@ -1519,8 +1655,8 @@
               <div class="top">
                 <strong>G${folioDeGasto(g.id)} · ${g.concepto}</strong>
                 <div style="display:flex; gap:8px;">
-                  <button class="cc-del" data-editar-gasto="${g.id}">Editar</button>
-                  <button class="cc-del" data-del-gasto="${g.id}">Eliminar</button>
+                  ${esAdmin() ? `<button class="cc-del" data-editar-gasto="${g.id}">Editar</button>` : ''}
+                  ${esAdmin() ? `<button class="cc-del" data-del-gasto="${g.id}">Eliminar</button>` : ''}
                 </div>
               </div>
               <div class="cc-meta">${g.fecha} · ${destinoLabel}</div>
@@ -1600,6 +1736,109 @@
     });
   }
 
+  // ---------- USUARIOS ----------
+  let listaUsuarios = [];
+  let errorUsuario = '';
+
+  async function cargarUsuarios(){
+    try{
+      const res = await apiFetch('/api/usuarios');
+      if(res.ok){
+        listaUsuarios = await res.json();
+      }
+    }catch(e){
+      console.error('Error cargando usuarios', e);
+    }
+    render();
+  }
+
+  function renderUsuarios(){
+    bodyEl.innerHTML = `
+      <div class="cc-card">
+        <h3 class="cc-h">Crear Usuario Nuevo</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">Los usuarios normales pueden capturar todo (lotes, ventas, gastos, clientes) pero no pueden editar ni eliminar nada.</p>
+        <div class="cc-form-row">
+          <div class="cc-field">
+            <label>Nombre</label>
+            <input type="text" id="nuevoUsuarioNombre" placeholder="Ej. Esposa de Aldo" />
+          </div>
+          <div class="cc-field">
+            <label>Usuario (para entrar)</label>
+            <input type="text" id="nuevoUsuarioLogin" placeholder="Ej. esposa" />
+          </div>
+        </div>
+        <div class="cc-form-row">
+          <div class="cc-field">
+            <label>Contraseña</label>
+            <input type="text" id="nuevoUsuarioPassword" placeholder="Contraseña" />
+          </div>
+          <div class="cc-field">
+            <label>Rol</label>
+            <select id="nuevoUsuarioRol">
+              <option value="usuario">Usuario (captura, no edita ni elimina)</option>
+              <option value="admin">Administrador (todo)</option>
+            </select>
+          </div>
+        </div>
+        ${errorUsuario ? `<p style="color:#B5322C; font-size:13px; margin:0 0 10px;">${errorUsuario}</p>` : ''}
+        <button class="cc-btn" type="button" id="crearUsuarioBtn">+ Crear Usuario</button>
+      </div>
+      <div id="usuariosList">
+        ${listaUsuarios.length===0 ? '<div class="cc-empty">Cargando usuarios...</div>' :
+          listaUsuarios.map(u=>`
+            <div class="cc-list-item">
+              <div class="top">
+                <strong>${u.nombre}</strong>
+                ${String(u.id) !== String(sesion.id) ? `<button class="cc-del" data-del-usuario="${u.id}">Eliminar</button>` : ''}
+              </div>
+              <div class="cc-meta">Usuario: ${u.usuario} · Rol: ${u.rol === 'admin' ? 'Administrador' : 'Usuario'}</div>
+            </div>
+          `).join('')
+        }
+      </div>
+    `;
+
+    document.getElementById('crearUsuarioBtn').addEventListener('click', async ()=>{
+      const nombre = document.getElementById('nuevoUsuarioNombre').value.trim();
+      const usuario = document.getElementById('nuevoUsuarioLogin').value.trim();
+      const password = document.getElementById('nuevoUsuarioPassword').value;
+      const rol = document.getElementById('nuevoUsuarioRol').value;
+      if(!nombre || !usuario || !password){
+        errorUsuario = 'Llena nombre, usuario y contraseña.';
+        render();
+        return;
+      }
+      try{
+        const res = await apiFetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, usuario, password, rol })
+        });
+        const datos = await res.json();
+        if(!res.ok){
+          errorUsuario = datos.error || 'No se pudo crear el usuario.';
+          render();
+          return;
+        }
+        errorUsuario = '';
+        await cargarUsuarios();
+      }catch(e){
+        errorUsuario = 'No se pudo conectar con el servidor.';
+        render();
+      }
+    });
+
+    bodyEl.querySelectorAll('[data-del-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', async ()=>{
+          const id = btn.dataset.delUsuario;
+          await apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+          await cargarUsuarios();
+        });
+      });
+    });
+  }
+
   // ---------- CAJA ----------
   function renderCaja(){
     const entradas = entradasDeCaja().map(e=>({...e, tipo:'entrada'}));
@@ -1667,7 +1906,23 @@
     saveData();
   });
 
-  loadData();
+  function iniciar(){
+    const guardada = localStorage.getItem('cc_sesion');
+    if(guardada){
+      try{
+        sesion = JSON.parse(guardada);
+      }catch(e){
+        sesion = null;
+      }
+    }
+    if(sesion){
+      loadData();
+    } else {
+      render();
+    }
+  }
+
+  iniciar();
 })();
 </script>
 </body>
