@@ -179,6 +179,39 @@ app.post('/api/usuarios', requiereLogin, requiereAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/usuarios/:id', requiereLogin, requiereAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, usuario, password, rol } = req.body;
+    if (!nombre || !usuario) {
+      return res.status(400).json({ error: 'Faltan datos (nombre o usuario).' });
+    }
+    const rolFinal = rol === 'admin' ? 'admin' : 'usuario';
+
+    if (password) {
+      const hash = await bcrypt.hash(password, 10);
+      await pool.query(
+        'UPDATE usuarios SET nombre = $1, usuario = $2, rol = $3, password_hash = $4 WHERE id = $5',
+        [nombre, usuario, rolFinal, hash, id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE usuarios SET nombre = $1, usuario = $2, rol = $3 WHERE id = $4',
+        [nombre, usuario, rolFinal, id]
+      );
+    }
+
+    const { rows } = await pool.query('SELECT id, nombre, usuario, rol FROM usuarios WHERE id = $1', [id]);
+    res.json(rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Ya existe un usuario con ese nombre de acceso.' });
+    }
+    console.error('Error al editar usuario:', err);
+    res.status(500).json({ error: 'No se pudo editar el usuario.' });
+  }
+});
+
 app.delete('/api/usuarios/:id', requiereLogin, requiereAdmin, async (req, res) => {
   try {
     const { id } = req.params;
