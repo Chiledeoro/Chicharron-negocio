@@ -373,6 +373,8 @@
     return res;
   }
 
+  let dataVersion = null;
+
   async function loadData(){
     try{
       const res = await apiFetch('/api/estado');
@@ -386,6 +388,8 @@
         state.ultimosPrecios = parsed.ultimosPrecios || {};
         state.temaOscuro = parsed.temaOscuro || false;
         state.lotesCerrados = parsed.lotesCerrados || [];
+        const version = res.headers.get('X-Data-Version');
+        if(version) dataVersion = Number(version);
       }
     }catch(e){
       console.error('Error cargando datos', e);
@@ -404,9 +408,17 @@
     try{
       const res = await apiFetch('/api/estado', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Data-Version': dataVersion != null ? String(dataVersion) : ''
+        },
         body: JSON.stringify(state)
       });
+      if(res.status === 409){
+        alert('Alguien más (tu esposa, hermana, o tú desde otro aparato) guardó cambios justo ahora. Para no perder nada, vamos a traer lo más reciente — vuelve a intentar tu cambio después.');
+        await loadData();
+        return;
+      }
       if(res.status === 403){
         const cuerpo = await res.json().catch(()=>({}));
         alert(cuerpo.error || 'Tu cuenta no tiene permiso para hacer ese cambio.');
@@ -414,6 +426,8 @@
         return;
       }
       if(!res.ok) throw new Error('Respuesta no OK: ' + res.status);
+      const version = res.headers.get('X-Data-Version');
+      if(version) dataVersion = Number(version);
     }catch(e){
       console.error('Error guardando datos (intento ' + intento + ')', e);
       if(intento < 3){
@@ -859,7 +873,10 @@
             return `
               <div class="cc-vgroup" style="${cerrado ? 'opacity:0.7;' : ''}">
                 <div class="top">
-                  <div class="cliente">L${g.folio} · ${fecha} ${cerrado ? '<span class="cc-pill pendiente" style="margin-left:6px;">Cerrado</span>' : ''}</div>
+                  <div>
+                    <div class="cliente">L${g.folio} · ${fecha} ${cerrado ? '<span class="cc-pill pendiente" style="margin-left:6px;">Cerrado</span>' : ''}</div>
+                    ${items[0].creadoPor ? `<div class="cc-meta">Registrado por ${items[0].creadoPor}</div>` : ''}
+                  </div>
                   ${puedeCapturar() ? `<button class="cc-del" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir Lote' : 'Cerrar Lote'}</button>` : ''}
                 </div>
                 <div class="items">${itemsHtml}</div>
@@ -915,7 +932,8 @@
             tipo: t.id,
             fecha,
             cantidad,
-            unidad
+            unidad,
+            creadoPor: sesion.nombre
           });
         }
       });
@@ -1173,7 +1191,7 @@
               }
               return `
                 <div class="cc-vitem" style="align-items:center;">
-                  <span>Pago del ${p.fecha}</span>
+                  <span>Pago del ${p.fecha}${p.creadoPor ? ` (${p.creadoPor})` : ''}</span>
                   <span>${money(p.monto)}</span>
                   ${esAdmin() ? `
                   <span>
@@ -1190,7 +1208,7 @@
                 <div class="top">
                   <div>
                     <div class="cliente">V${g.folio} · ${g.cliente}</div>
-                    <div class="cc-meta">${g.fecha}</div>
+                    <div class="cc-meta">${g.fecha}${g.items[0].creadoPor ? ` · Registrado por ${g.items[0].creadoPor}` : ''}</div>
                   </div>
                   <span class="cc-pill ${estaPagado?'pagado':'pendiente'}">${estado}</span>
                 </div>
@@ -1291,7 +1309,8 @@
               fecha,
               cantidad,
               precioUnitario,
-              precioTotal: Math.round(cantidad * precioUnitario * 100) / 100
+              precioTotal: Math.round(cantidad * precioUnitario * 100) / 100,
+              creadoPor: sesion.nombre
             });
           }
           if(algunaCantidad && precioUnitario > 0){
@@ -1306,7 +1325,7 @@
         registrarClienteSiEsNuevo(cliente);
         if(pagado){
           const totalVenta = nuevas.reduce((s,v)=>s+v.precioTotal,0);
-          state.pagos.push({ id: uid(), grupoId, monto: totalVenta, fecha });
+          state.pagos.push({ id: uid(), grupoId, monto: totalVenta, fecha, creadoPor: sesion.nombre });
         }
         render();
         saveData();
@@ -1362,7 +1381,7 @@
           alert('Elige una fecha para el pago.');
           return;
         }
-        state.pagos.push({ id: uid(), grupoId: key, monto, fecha });
+        state.pagos.push({ id: uid(), grupoId: key, monto, fecha, creadoPor: sesion.nombre });
         render();
         saveData();
       });
@@ -1375,9 +1394,57 @@
         const fechaInput = document.getElementById(`pagoFecha_${key}`);
         const fecha = fechaInput ? fechaInput.value : todayStr();
         if(saldo <= 0) return;
-        state.pagos.push({ id: uid(), grupoId: key, monto: saldo, fecha: fecha || todayStr() });
+        state.pagos.push({ id: uid(), grupoId: key, monto: saldo, fecha: fecha || todayStr(), creadoPor: sesion.nombre });
         render();
         saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoPago = btn.dataset.editarPago;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoPago = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarPago;
+        const pago = state.pagos.find(p=>p.id===id);
+        if(!pago) return;
+        const monto = Number(document.getElementById(`editPagoMonto_${id}`).value);
+        const fecha = document.getElementById(`editPagoFecha_${id}`).value;
+        if(!monto || monto <= 0){
+          alert('Escribe un monto válido.');
+          return;
+        }
+        if(!fecha){
+          alert('Elige una fecha.');
+          return;
+        }
+        pago.monto = monto;
+        pago.fecha = fecha;
+        editandoPago = null;
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-del-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const id = btn.dataset.delPago;
+          state.pagos = state.pagos.filter(p=>p.id!==id);
+          render();
+          saveData();
+        });
       });
     });
 
@@ -1725,7 +1792,7 @@
                   ${esAdmin() ? `<button class="cc-del" data-del-gasto="${g.id}">Eliminar</button>` : ''}
                 </div>
               </div>
-              <div class="cc-meta">${g.fecha} · ${destinoLabel}</div>
+              <div class="cc-meta">${g.fecha} · ${destinoLabel}${g.creadoPor ? ` · Registrado por ${g.creadoPor}` : ''}</div>
               <div class="cc-row-detail"><span>Monto</span><strong style="color:#B5322C">${money(g.monto)}</strong></div>
             </div>
           `;}).join('')
@@ -1748,7 +1815,8 @@
         fecha,
         concepto,
         monto,
-        destino
+        destino,
+        creadoPor: sesion.nombre
       };
       state.gastos.push(nuevo);
       render();
