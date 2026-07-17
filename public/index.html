@@ -341,6 +341,12 @@
 
   // ---------- Sesion / autenticacion ----------
   function esAdmin(){ return !!(sesion && sesion.rol === 'admin'); }
+  function puedeCapturar(){ return !!(sesion && sesion.rol !== 'vista'); }
+  function etiquetaRol(rol){
+    if(rol === 'admin') return 'Administrador';
+    if(rol === 'vista') return 'Solo Vista';
+    return 'Usuario';
+  }
 
   function guardarSesion(datos){
     sesion = datos;
@@ -594,7 +600,7 @@
     if(sesion){
       logoutBtn.style.display = 'block';
       logoutBtn.onclick = cerrarSesion;
-      usuarioActualEl.textContent = `${sesion.nombre} (${sesion.rol === 'admin' ? 'Administrador' : 'Usuario'})`;
+      usuarioActualEl.textContent = `${sesion.nombre} (${etiquetaRol(sesion.rol)})`;
     } else {
       logoutBtn.style.display = 'none';
       usuarioActualEl.textContent = 'Control de lotes, ventas y caja';
@@ -759,6 +765,7 @@
   function renderLotes(){
     const lotesOrdenados = [...state.lotes].sort((a,b)=> b.fecha.localeCompare(a.fecha));
     bodyEl.innerHTML = `
+      ${puedeCapturar() ? `
       <div class="cc-card" style="padding:${formularioLoteAbierto ? '16px' : '10px 16px'};">
         <div class="cc-venta-row" style="background:none; padding:0; cursor:pointer;" data-toggle-form-lote="1">
           <span style="font-size:13px; color:#8a7b6d; width:16px;">${formularioLoteAbierto ? '▾' : '▸'}</span>
@@ -793,6 +800,7 @@
         </form>
         ` : ''}
       </div>
+      ` : ''}
       <div class="cc-filterbar">
         <div class="cc-filter-btn ${loteFilter==='todas'?'active':''}" data-lote-filter="todas">Todas</div>
         <div class="cc-filter-btn ${loteFilter==='existencia'?'active':''}" data-lote-filter="existencia">Con Existencia</div>
@@ -852,7 +860,7 @@
               <div class="cc-vgroup" style="${cerrado ? 'opacity:0.7;' : ''}">
                 <div class="top">
                   <div class="cliente">L${g.folio} · ${fecha} ${cerrado ? '<span class="cc-pill pendiente" style="margin-left:6px;">Cerrado</span>' : ''}</div>
-                  <button class="cc-del" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir Lote' : 'Cerrar Lote'}</button>
+                  ${puedeCapturar() ? `<button class="cc-del" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir Lote' : 'Cerrar Lote'}</button>` : ''}
                 </div>
                 <div class="items">${itemsHtml}</div>
                 <div class="total-row">
@@ -984,6 +992,7 @@
     });
 
     bodyEl.innerHTML = `
+      ${puedeCapturar() ? `
       <div class="cc-card" style="padding:${formularioVentaAbierto ? '16px' : '10px 16px'};">
         <div class="cc-venta-row" style="background:none; padding:0; cursor:pointer;" data-toggle-form-venta="1">
           <span style="font-size:13px; color:#8a7b6d; width:16px;">${formularioVentaAbierto ? '▾' : '▸'}</span>
@@ -1066,6 +1075,7 @@
         `}
         ` : ''}
       </div>
+      ` : ''}
 
       <div class="cc-venta-row" style="margin:0 0 10px;">
         <input type="text" id="ventaBuscar" placeholder="Buscar por cliente..." value="${ventaBusqueda}" style="flex:1 1 auto; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--white);" />
@@ -1193,12 +1203,14 @@
                 ${pagosGrupo.length > 0 ? `<div style="margin-top:6px;">${pagosHtml}</div>` : ''}
                 ${!estaPagado ? `
                   <div class="cc-row-detail" style="margin-top:2px;"><span>Saldo pendiente</span><strong style="color:#B5322C">${money(saldo)}</strong></div>
+                  ${puedeCapturar() ? `
                   <div class="cc-venta-row" style="margin-top:8px;">
                     <input type="number" id="pagoMonto_${g.key}" min="0" step="0.01" placeholder="Monto a pagar" style="width:110px;" />
                     <input type="date" id="pagoFecha_${g.key}" value="${todayStr()}" style="width:130px;" />
                     <button class="cc-btn small" data-pago-abono="${g.key}">Registrar pago</button>
                     <button class="cc-btn small ghost" data-pago-completo="${g.key}" data-saldo="${saldo}">Pago completo</button>
                   </div>
+                  ` : ''}
                 ` : ''}
                 <div style="display:flex; gap:8px; margin-top:8px;">
                   ${esAdmin() ? `<button class="cc-del" data-editar-venta="${g.key}">Editar</button>` : ''}
@@ -1478,6 +1490,7 @@
   function renderClientes(){
     const resumen = resumenPorCliente();
     bodyEl.innerHTML = `
+      ${puedeCapturar() ? `
       <div class="cc-card">
         <h3 class="cc-h">Agregar Cliente</h3>
         <p class="cc-meta" style="margin:-6px 0 12px;">También se agregan solos cuando les vendes por primera vez.</p>
@@ -1486,6 +1499,7 @@
           <button class="cc-btn small" type="button" id="clienteSubmitBtn">+ Agregar</button>
         </div>
       </div>
+      ` : ''}
       <div class="cc-venta-row" style="margin:0 0 10px;">
         <input type="text" id="clienteBuscar" placeholder="Buscar cliente..." value="${clienteBusqueda}" style="flex:1 1 auto; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--white);" />
       </div>
@@ -1530,7 +1544,8 @@
       </datalist>
     `;
 
-    document.getElementById('clienteSubmitBtn').addEventListener('click', ()=>{
+    const clienteSubmitBtn = document.getElementById('clienteSubmitBtn');
+    if(clienteSubmitBtn) clienteSubmitBtn.addEventListener('click', ()=>{
       const input = document.getElementById('clienteNombre');
       const nombre = input.value.trim();
       if(!nombre){
@@ -1616,6 +1631,7 @@
     }));
 
     bodyEl.innerHTML = `
+      ${puedeCapturar() ? `
       <div class="cc-card">
         <h3 class="cc-h">Registrar gasto</h3>
         <form id="gastoForm">
@@ -1650,6 +1666,7 @@
           <button class="cc-btn" type="button" id="gastoSubmitBtn">+ Agregar gasto</button>
         </form>
       </div>
+      ` : ''}
       <div id="gastosList">
         ${gastosOrdenados.length===0 ? '<div class="cc-empty">Aún no hay gastos registrados.</div>' :
           gastosOrdenados.map(g=>{
@@ -1716,7 +1733,8 @@
       </div>
     `;
 
-    document.getElementById('gastoSubmitBtn').addEventListener('click', ()=>{
+    const gastoSubmitBtn = document.getElementById('gastoSubmitBtn');
+    if(gastoSubmitBtn) gastoSubmitBtn.addEventListener('click', ()=>{
       const fecha = document.getElementById('gastoFecha').value;
       const monto = Number(document.getElementById('gastoMonto').value);
       const concepto = document.getElementById('gastoConcepto').value;
@@ -1826,6 +1844,7 @@
             <label>Rol</label>
             <select id="nuevoUsuarioRol">
               <option value="usuario">Usuario (captura, no edita ni elimina)</option>
+              <option value="vista">Solo Vista (no captura, no edita, no elimina)</option>
               <option value="admin">Administrador (todo)</option>
             </select>
           </div>
@@ -1858,6 +1877,7 @@
                       <label>Rol</label>
                       <select id="editUsuarioRol_${u.id}">
                         <option value="usuario" ${u.rol==='usuario'?'selected':''}>Usuario (captura, no edita ni elimina)</option>
+                        <option value="vista" ${u.rol==='vista'?'selected':''}>Solo Vista (no captura, no edita, no elimina)</option>
                         <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador (todo)</option>
                       </select>
                     </div>
@@ -1878,7 +1898,7 @@
                   ${String(u.id) !== String(sesion.id) ? `<button class="cc-del" data-del-usuario="${u.id}">Eliminar</button>` : ''}
                 </div>
               </div>
-              <div class="cc-meta">Usuario: ${u.usuario} · Rol: ${u.rol === 'admin' ? 'Administrador' : 'Usuario'}</div>
+              <div class="cc-meta">Usuario: ${u.usuario} · Rol: ${etiquetaRol(u.rol)}</div>
             </div>
           `;}).join('')
         }
