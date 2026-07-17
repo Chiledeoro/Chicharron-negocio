@@ -163,7 +163,7 @@ app.post('/api/usuarios', requiereLogin, requiereAdmin, async (req, res) => {
     if (!nombre || !usuario || !password) {
       return res.status(400).json({ error: 'Faltan datos (nombre, usuario o contraseña).' });
     }
-    const rolFinal = rol === 'admin' ? 'admin' : 'usuario';
+    const rolFinal = ['admin', 'usuario', 'vista'].includes(rol) ? rol : 'usuario';
     const hash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(
       'INSERT INTO usuarios (nombre, usuario, password_hash, rol) VALUES ($1, $2, $3, $4) RETURNING id, nombre, usuario, rol',
@@ -186,7 +186,7 @@ app.put('/api/usuarios/:id', requiereLogin, requiereAdmin, async (req, res) => {
     if (!nombre || !usuario) {
       return res.status(400).json({ error: 'Faltan datos (nombre o usuario).' });
     }
-    const rolFinal = rol === 'admin' ? 'admin' : 'usuario';
+    const rolFinal = ['admin', 'usuario', 'vista'].includes(rol) ? rol : 'usuario';
 
     if (password) {
       const hash = await bcrypt.hash(password, 10);
@@ -261,6 +261,10 @@ function soloAgrego(anterior, nuevo) {
 
 app.post('/api/estado', requiereLogin, async (req, res) => {
   try {
+    if (req.usuario.rol === 'vista') {
+      return res.status(403).json({ error: 'Tu cuenta es de solo vista, no puedes capturar ni cambiar nada.' });
+    }
+
     const datosNuevos = req.body;
 
     if (req.usuario.rol !== 'admin') {
