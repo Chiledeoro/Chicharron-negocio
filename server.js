@@ -46,7 +46,7 @@ const ESTADO_VACIO = {
 
 // Listas que se protegen de edicion/eliminacion cuando el usuario no es admin.
 // Se identifican los registros por su "id" y se compara contra lo que ya habia guardado.
-const LISTAS_PROTEGIDAS = ['lotes', 'ventas', 'gastos', 'clientes'];
+const LISTAS_PROTEGIDAS = ['lotes', 'ventas', 'gastos', 'clientes', 'pagos'];
 
 async function iniciarBaseDeDatos() {
   await pool.query(`
