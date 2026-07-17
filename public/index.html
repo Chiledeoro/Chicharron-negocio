@@ -1739,6 +1739,7 @@
   // ---------- USUARIOS ----------
   let listaUsuarios = [];
   let errorUsuario = '';
+  let editandoUsuario = null;
 
   async function cargarUsuarios(){
     try{
@@ -1785,15 +1786,52 @@
       </div>
       <div id="usuariosList">
         ${listaUsuarios.length===0 ? '<div class="cc-empty">Cargando usuarios...</div>' :
-          listaUsuarios.map(u=>`
+          listaUsuarios.map(u=>{
+            if(editandoUsuario === u.id){
+              return `
+                <div class="cc-list-item">
+                  <div class="cc-form-row">
+                    <div class="cc-field">
+                      <label>Nombre</label>
+                      <input type="text" id="editUsuarioNombre_${u.id}" value="${u.nombre}" />
+                    </div>
+                    <div class="cc-field">
+                      <label>Usuario (para entrar)</label>
+                      <input type="text" id="editUsuarioLogin_${u.id}" value="${u.usuario}" />
+                    </div>
+                  </div>
+                  <div class="cc-form-row">
+                    <div class="cc-field">
+                      <label>Nueva contraseña</label>
+                      <input type="text" id="editUsuarioPassword_${u.id}" placeholder="Dejar en blanco para no cambiarla" />
+                    </div>
+                    <div class="cc-field">
+                      <label>Rol</label>
+                      <select id="editUsuarioRol_${u.id}">
+                        <option value="usuario" ${u.rol==='usuario'?'selected':''}>Usuario (captura, no edita ni elimina)</option>
+                        <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador (todo)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button class="cc-btn small" data-guardar-usuario="${u.id}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-usuario="${u.id}">Cancelar</button>
+                  </div>
+                </div>
+              `;
+            }
+            return `
             <div class="cc-list-item">
               <div class="top">
                 <strong>${u.nombre}</strong>
-                ${String(u.id) !== String(sesion.id) ? `<button class="cc-del" data-del-usuario="${u.id}">Eliminar</button>` : ''}
+                <div style="display:flex; gap:8px;">
+                  <button class="cc-del" data-editar-usuario="${u.id}">Editar</button>
+                  ${String(u.id) !== String(sesion.id) ? `<button class="cc-del" data-del-usuario="${u.id}">Eliminar</button>` : ''}
+                </div>
               </div>
               <div class="cc-meta">Usuario: ${u.usuario} · Rol: ${u.rol === 'admin' ? 'Administrador' : 'Usuario'}</div>
             </div>
-          `).join('')
+          `;}).join('')
         }
       </div>
     `;
@@ -1835,6 +1873,54 @@
           await apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' });
           await cargarUsuarios();
         });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoUsuario = Number(btn.dataset.editarUsuario);
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoUsuario = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-usuario]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.guardarUsuario;
+        const nombre = document.getElementById(`editUsuarioNombre_${id}`).value.trim();
+        const usuario = document.getElementById(`editUsuarioLogin_${id}`).value.trim();
+        const password = document.getElementById(`editUsuarioPassword_${id}`).value;
+        const rol = document.getElementById(`editUsuarioRol_${id}`).value;
+        if(!nombre || !usuario){
+          alert('Llena nombre y usuario.');
+          return;
+        }
+        try{
+          const res = await apiFetch(`/api/usuarios/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, usuario, password: password || undefined, rol })
+          });
+          const datos = await res.json();
+          if(!res.ok){
+            alert(datos.error || 'No se pudo editar el usuario.');
+            return;
+          }
+          // si el admin se edita a si mismo, actualiza tambien el nombre mostrado en el encabezado
+          if(String(id) === String(sesion.id)){
+            guardarSesion({ ...sesion, nombre, usuario, rol });
+          }
+          editandoUsuario = null;
+          await cargarUsuarios();
+        }catch(e){
+          alert('No se pudo conectar con el servidor.');
+        }
       });
     });
   }
