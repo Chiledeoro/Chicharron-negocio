@@ -53,9 +53,11 @@ async function iniciarBaseDeDatos() {
     CREATE TABLE IF NOT EXISTS app_data (
       id INTEGER PRIMARY KEY DEFAULT 1,
       data JSONB NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
       actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+  await pool.query(`ALTER TABLE app_data ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1;`);
   const { rows } = await pool.query('SELECT id FROM app_data WHERE id = 1');
   if (rows.length === 0) {
     await pool.query('INSERT INTO app_data (id, data) VALUES (1, $1)', [ESTADO_VACIO]);
@@ -230,8 +232,10 @@ app.delete('/api/usuarios/:id', requiereLogin, requiereAdmin, async (req, res) =
 
 app.get('/api/estado', requiereLogin, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT data FROM app_data WHERE id = 1');
-    res.json(rows[0] ? rows[0].data : ESTADO_VACIO);
+    const { rows } = await pool.query('SELECT data, version FROM app_data WHERE id = 1');
+    const fila = rows[0] || { data: ESTADO_VACIO, version: 1 };
+    res.set('X-Data-Version', String(fila.version));
+    res.json(fila.data);
   } catch (err) {
     console.error('Error al leer datos:', err);
     res.status(500).json({ error: 'No se pudo leer la informacion.' });
@@ -266,22 +270,36 @@ app.post('/api/estado', requiereLogin, async (req, res) => {
     }
 
     const datosNuevos = req.body;
+    const versionEsperada = Number(req.headers['x-data-version'] || 0);
+
+    const { rows } = await pool.query('SELECT data, version FROM app_data WHERE id = 1');
+    const fila = rows[0] || { data: ESTADO_VACIO, version: 1 };
+    const datosActuales = fila.data;
+
+    // Si alguien mas guardo cambios entre que tu cargaste la pantalla y ahora,
+    // no dejamos que se guarde encima sin que primero veas lo mas reciente.
+    if (versionEsperada && versionEsperada !== fila.version) {
+      return res.status(409).json({
+        error: 'Alguien más guardó cambios mientras tanto. Recarga para ver lo más reciente antes de guardar.',
+        versionActual: fila.version
+      });
+    }
 
     if (req.usuario.rol !== 'admin') {
-      const { rows } = await pool.query('SELECT data FROM app_data WHERE id = 1');
-      const datosActuales = rows[0] ? rows[0].data : ESTADO_VACIO;
       const problema = soloAgrego(datosActuales, datosNuevos);
       if (problema) {
         return res.status(403).json({ error: `Tu cuenta no puede editar ni eliminar información existente. ${problema}` });
       }
     }
 
+    const nuevaVersion = fila.version + 1;
     await pool.query(
-      `INSERT INTO app_data (id, data, actualizado_en) VALUES (1, $1, now())
-       ON CONFLICT (id) DO UPDATE SET data = $1, actualizado_en = now()`,
-      [datosNuevos]
+      `INSERT INTO app_data (id, data, version, actualizado_en) VALUES (1, $1, $2, now())
+       ON CONFLICT (id) DO UPDATE SET data = $1, version = $2, actualizado_en = now()`,
+      [datosNuevos, nuevaVersion]
     );
-    res.json({ ok: true });
+    res.set('X-Data-Version', String(nuevaVersion));
+    res.json({ ok: true, version: nuevaVersion });
   } catch (err) {
     console.error('Error al guardar datos:', err);
     res.status(500).json({ error: 'No se pudo guardar la informacion.' });
