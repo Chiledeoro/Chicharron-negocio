@@ -45,8 +45,32 @@ guarda todo en una base de datos propia en vez del guardado de Claude.
 2. Elige **"Database"** → **"Add PostgreSQL"**.
 3. Railway crea la base de datos sola y la conecta automáticamente con tu app
    (esto se llama variable `DATABASE_URL` — no tienes que escribirla a mano).
+4. **Importante:** si no se conecta sola, ve a tu servicio de la app → pestaña
+   **"Variables"** → verás un aviso que dice *"Trying to connect a database?
+   Add Variable"* — dale clic ahí y selecciona **`DATABASE_URL`** de Postgres.
 
-### 5. Actívalo
+### 5. Configura tu usuario administrador (¡nuevo!)
+
+Ahora la app pide iniciar sesión. Antes de entrar por primera vez, configura estas
+variables en tu servicio de la app (pestaña **"Variables"** → "+ New Variable"):
+
+| Variable | Para qué sirve | Ejemplo |
+|---|---|---|
+| `ADMIN_USER` | El usuario con el que vas a entrar tú como administrador | `aldo` |
+| `ADMIN_PASSWORD` | Tu contraseña | (algo que solo tú sepas) |
+| `JWT_SECRET` | Una palabra secreta para proteger las sesiones | cualquier texto largo al azar |
+
+Si no configuras `ADMIN_USER` y `ADMIN_PASSWORD`, la app crea un usuario admin
+por default (`admin` / `chicharron123`) — **cámbialo en cuanto puedas entrar**,
+o mejor, configura las variables desde el principio para que no exista ese
+usuario por default.
+
+Una vez que entres con tu cuenta de administrador, ve a la pestaña **🔑
+Usuarios** dentro de la app para crear el acceso de tu esposa y tu hermana —
+ellas van a poder capturar todo (lotes, ventas, gastos, clientes) pero **no
+podrán editar ni eliminar** nada, solo tú como administrador puedes hacer eso.
+
+### 6. Actívalo
 
 1. Ve a la pestaña **"Settings"** de tu servicio (el de la app, no el de la
    base de datos).
@@ -55,12 +79,12 @@ guarda todo en una base de datos propia en vez del guardado de Claude.
    vas a usar tú, tu esposa y tu hermana para entrar a la app desde cualquier
    aparato.
 
-### 6. Prueba antes de pagar
+### 7. Prueba antes de pagar
 
 Con el crédito gratis de $5 ya puedes probar todo — que capturen lotes, ventas,
 gastos, y que revisen que todo se vea y funcione bien desde sus celulares.
 
-### 7. Activa el plan de pago (cuando ya estés convencido)
+### 8. Activa el plan de pago (cuando ya estés convencido)
 
 1. Ve a **"Billing"** en el menú de tu cuenta.
 2. Activa el plan **Hobby** ($5 USD/mes) para que la app se quede corriendo
