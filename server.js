@@ -95,7 +95,7 @@ function generarToken(usuario) {
   return jwt.sign(
     { id: usuario.id, usuario: usuario.usuario, nombre: usuario.nombre, rol: usuario.rol },
     JWT_SECRET,
-    { expiresIn: '90d' }
+    { expiresIn: '5d' }
   );
 }
 
