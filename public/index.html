@@ -273,10 +273,11 @@
     {id:'jalapeno', label:'Jalapeño', cls:'jalapeno'}
   ];
 
-  let state = { lotes: [], ventas: [], gastos: [], pagos: [], clientes: [], ultimosPrecios: {}, temaOscuro: false, lotesCerrados: [] };
+  let state = { lotes: [], ventas: [], gastos: [], pagos: [], clientes: [], ultimosPrecios: {}, temaOscuro: false, lotesCerrados: [], saldoInicial: 0 };
   let activeTab = 'resumen';
   let ventaFilter = 'todas';
   let loteFilter = 'todas';
+  let loteEstadoFilter = 'todas';
   let ventaBusqueda = '';
   let clienteBusqueda = '';
   let tiposExpandido = {};
@@ -302,6 +303,7 @@
     {id:'clientes', label:'Clientes', icon:'👥'},
     {id:'gastos', label:'Gastos', icon:'💸'},
     {id:'caja', label:'Caja', icon:'💰'},
+    {id:'utilidades', label:'Utilidades', icon:'📈'},
     {id:'usuarios', label:'Usuarios', icon:'🔑', soloAdmin:true}
   ];
 
@@ -388,6 +390,7 @@
         state.ultimosPrecios = parsed.ultimosPrecios || {};
         state.temaOscuro = parsed.temaOscuro || false;
         state.lotesCerrados = parsed.lotesCerrados || [];
+        state.saldoInicial = parsed.saldoInicial || 0;
         const version = res.headers.get('X-Data-Version');
         if(version) dataVersion = Number(version);
       }
@@ -628,6 +631,7 @@
     else if(activeTab === 'clientes') renderClientes();
     else if(activeTab === 'gastos') renderGastos();
     else if(activeTab === 'caja') renderCaja();
+    else if(activeTab === 'utilidades') renderUtilidades();
     else if(activeTab === 'usuarios'){ renderUsuarios(); if(listaUsuarios.length===0) cargarUsuarios(); }
   }
 
@@ -650,7 +654,7 @@
     const grupos = agruparVentas();
     const totalPagado = entradasDeCaja().reduce((s,m)=>s+m.monto,0);
     const totalGastos = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
-    const caja = totalPagado - totalGastos;
+    const caja = state.saldoInicial + totalPagado - totalGastos;
     const porCobrar = grupos.reduce((s,g)=> s + (g.total - montoPagadoDeGrupo(g)), 0);
 
     const invPorTipo = {};
@@ -820,6 +824,11 @@
         <div class="cc-filter-btn ${loteFilter==='existencia'?'active':''}" data-lote-filter="existencia">Con Existencia</div>
         <div class="cc-filter-btn ${loteFilter==='agotados'?'active':''}" data-lote-filter="agotados">Agotados</div>
       </div>
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${loteEstadoFilter==='todas'?'active':''}" data-lote-estado-filter="todas">Todos</div>
+        <div class="cc-filter-btn ${loteEstadoFilter==='abiertos'?'active':''}" data-lote-estado-filter="abiertos">Abiertos</div>
+        <div class="cc-filter-btn ${loteEstadoFilter==='cerrados'?'active':''}" data-lote-estado-filter="cerrados">Cerrados</div>
+      </div>
 
       <div id="lotesList">
         ${(()=>{
@@ -831,6 +840,12 @@
             listaGrupos = listaGrupos.filter(g=> g.items.some(l=>disponibleDeLote(l) > 0));
           } else if(loteFilter === 'agotados'){
             listaGrupos = listaGrupos.filter(g=> g.items.every(l=>disponibleDeLote(l) <= 0));
+          }
+
+          if(loteEstadoFilter === 'abiertos'){
+            listaGrupos = listaGrupos.filter(g=> !state.lotesCerrados.includes(g.key));
+          } else if(loteEstadoFilter === 'cerrados'){
+            listaGrupos = listaGrupos.filter(g=> state.lotesCerrados.includes(g.key));
           }
 
           if(listaGrupos.length === 0) return '<div class="cc-empty">No hay lotes en esta categoría.</div>';
@@ -893,6 +908,10 @@
 
     bodyEl.querySelectorAll('[data-lote-filter]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ loteFilter = btn.dataset.loteFilter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-lote-estado-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ loteEstadoFilter = btn.dataset.loteEstadoFilter; render(); });
     });
 
     const toggleFormLoteBtn = bodyEl.querySelector('[data-toggle-form-lote]');
@@ -1023,10 +1042,11 @@
           <div class="cc-form-row">
             <div class="cc-field">
               <label>Cliente</label>
-              <input type="text" id="ventaCliente" name="cliente" placeholder="Nombre del cliente" list="clientesDatalist" required />
-              <datalist id="clientesDatalist">
-                ${listaClientes().map(c=>`<option value="${c}"></option>`).join('')}
-              </datalist>
+              <select id="ventaClienteSelect">
+                <option value="__nuevo__">+ Nuevo Cliente...</option>
+                ${listaClientes().map(c=>`<option value="${c}">${c}</option>`).join('')}
+              </select>
+              <input type="text" id="ventaClienteNuevo" placeholder="Nombre del nuevo cliente" style="margin-top:6px; ${listaClientes().length===0 ? '' : 'display:none;'}" />
             </div>
             <div class="cc-field">
               <label>Fecha</label>
@@ -1243,6 +1263,19 @@
 
     const submitBtn = document.getElementById('ventaSubmitBtn');
     if(submitBtn){
+      const clienteSelectEl = document.getElementById('ventaClienteSelect');
+      const clienteNuevoEl = document.getElementById('ventaClienteNuevo');
+      if(clienteSelectEl && clienteNuevoEl){
+        clienteSelectEl.addEventListener('change', ()=>{
+          if(clienteSelectEl.value === '__nuevo__'){
+            clienteNuevoEl.style.display = 'block';
+            clienteNuevoEl.focus();
+          } else {
+            clienteNuevoEl.style.display = 'none';
+          }
+        });
+      }
+
       const totalPreview = document.getElementById('ventaTotalPreview');
       const frascosPreview = document.getElementById('ventaFrascosPreview');
       const updatePreview = ()=>{
@@ -1275,7 +1308,9 @@
       });
 
       submitBtn.addEventListener('click', ()=>{
-        const cliente = document.getElementById('ventaCliente').value;
+        const clienteSelect = document.getElementById('ventaClienteSelect');
+        const clienteNuevoInput = document.getElementById('ventaClienteNuevo');
+        const cliente = clienteSelect.value === '__nuevo__' ? clienteNuevoInput.value.trim() : clienteSelect.value;
         const fecha = document.getElementById('ventaFecha').value;
         if(!cliente || !fecha){
           alert('Llena cliente y fecha.');
@@ -2063,6 +2098,66 @@
   }
 
   // ---------- CAJA ----------
+  let editandoSaldoInicial = false;
+
+  let utilidadFilter = 'todos';
+
+  function renderUtilidades(){
+    const totalVendido = state.ventas.reduce((s,v)=>s+Number(v.precioTotal),0);
+    const totalGastos = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
+    const utilidadTotal = Math.round((totalVendido - totalGastos) * 100) / 100;
+
+    let listaGrupos = agruparLotes().map(g=>{
+      const vendido = vendidoDelGrupoLote(g);
+      const gastos = gastosDelGrupoLote(g.key);
+      const utilidad = Math.round((vendido - gastos) * 100) / 100;
+      const cerrado = state.lotesCerrados.includes(g.key);
+      return { ...g, vendido, gastos, utilidad, cerrado };
+    });
+
+    if(utilidadFilter === 'cerrados'){
+      listaGrupos = listaGrupos.filter(g=>g.cerrado);
+    }
+    listaGrupos.sort((a,b)=> b.utilidad - a.utilidad);
+
+    bodyEl.innerHTML = `
+      <div class="cc-grid3">
+        <div class="cc-stat">
+          <div class="label">Vendido Total</div>
+          <div class="value">${money(totalVendido)}</div>
+        </div>
+        <div class="cc-stat neg">
+          <div class="label">Gastos Totales</div>
+          <div class="value">${money(totalGastos)}</div>
+        </div>
+        <div class="cc-stat ${utilidadTotal>=0?'pos':'neg'}">
+          <div class="label">Utilidad Total</div>
+          <div class="value">${money(utilidadTotal)}</div>
+        </div>
+      </div>
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${utilidadFilter==='todos'?'active':''}" data-utilidad-filter="todos">Todos Los Lotes</div>
+        <div class="cc-filter-btn ${utilidadFilter==='cerrados'?'active':''}" data-utilidad-filter="cerrados">Solo Cerrados</div>
+      </div>
+      <div class="cc-card">
+        <h3 class="cc-h">Utilidad Por Lote</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">Ordenados de mayor a menor utilidad.</p>
+        ${listaGrupos.length===0 ? '<div class="cc-empty">No hay lotes en esta categoría.</div>' :
+          listaGrupos.map(g=>`
+            <div class="cc-row-detail" style="padding:8px 0; border-bottom:1px solid var(--line);">
+              <span>L${g.folio} · ${g.items[0].fecha} ${g.cerrado ? '<span class="cc-pill pendiente" style="margin-left:4px;">Cerrado</span>' : ''}</span>
+              <strong style="color:${g.utilidad>=0?'#5C7A4A':'#B5322C'}">${money(g.utilidad)}</strong>
+            </div>
+          `).join('')
+        }
+      </div>
+    `;
+
+    bodyEl.querySelectorAll('[data-utilidad-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ utilidadFilter = btn.dataset.utilidadFilter; render(); });
+    });
+  }
+
   function renderCaja(){
     const entradas = entradasDeCaja().map(e=>({...e, tipo:'entrada'}));
     const salidas = state.gastos.map(g=>({
@@ -2073,7 +2168,7 @@
     }));
 
     const movimientos = [...entradas, ...salidas].sort((a,b)=> a.fecha.localeCompare(b.fecha) || 0);
-    let running = 0;
+    let running = state.saldoInicial || 0;
     const conBalance = movimientos.map(m=>{
       running += (m.tipo==='entrada' ? m.monto : -m.monto);
       return {...m, balance: running};
@@ -2099,6 +2194,25 @@
           <div class="value">${money(totalSalidas)}</div>
         </div>
       </div>
+      ${esAdmin() ? `
+      <div class="cc-card">
+        <h3 class="cc-h">Saldo Inicial</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">El dinero que ya tenías en la mano antes de empezar a usar la app. Se suma una sola vez al total de caja.</p>
+        ${editandoSaldoInicial ? `
+          <div class="cc-venta-row">
+            <input type="number" id="saldoInicialInput" min="0" step="0.01" value="${state.saldoInicial || 0}" style="width:120px;" />
+            <button class="cc-btn small" type="button" id="guardarSaldoInicialBtn">Guardar</button>
+            <button class="cc-btn small ghost" type="button" id="cancelarSaldoInicialBtn">Cancelar</button>
+          </div>
+        ` : `
+          <div class="cc-row-detail">
+            <span>Saldo inicial actual</span>
+            <strong>${money(state.saldoInicial || 0)}</strong>
+          </div>
+          <button class="cc-btn small ghost" type="button" id="editarSaldoInicialBtn" style="margin-top:8px;">Editar Saldo Inicial</button>
+        `}
+      </div>
+      ` : ''}
       <div class="cc-card">
         <h3 class="cc-h">Movimientos</h3>
         ${paraMostrar.length===0 ? '<div class="cc-empty">Aún no hay movimientos. Marca ventas como pagadas o registra gastos.</div>' :
@@ -2115,6 +2229,27 @@
         }
       </div>
     `;
+
+    const editarBtn = document.getElementById('editarSaldoInicialBtn');
+    if(editarBtn) editarBtn.addEventListener('click', ()=>{
+      editandoSaldoInicial = true;
+      render();
+    });
+
+    const cancelarBtn = document.getElementById('cancelarSaldoInicialBtn');
+    if(cancelarBtn) cancelarBtn.addEventListener('click', ()=>{
+      editandoSaldoInicial = false;
+      render();
+    });
+
+    const guardarBtn = document.getElementById('guardarSaldoInicialBtn');
+    if(guardarBtn) guardarBtn.addEventListener('click', ()=>{
+      const valor = Number(document.getElementById('saldoInicialInput').value) || 0;
+      state.saldoInicial = valor;
+      editandoSaldoInicial = false;
+      render();
+      saveData();
+    });
   }
 
   function aplicarTema(){
