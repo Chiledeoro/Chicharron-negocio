@@ -707,13 +707,6 @@
           <input type="file" id="restaurarRespaldoInput" accept="application/json" style="display:none;" />
         </div>
       </div>
-      ${esAdmin() ? `
-      <div class="cc-card" style="border-color:#B5322C;">
-        <h3 class="cc-h" style="color:#B5322C;">Borrar Todo Y Empezar De Cero</h3>
-        <p class="cc-meta" style="margin:-6px 0 12px;">Borra permanentemente todos los lotes, ventas, gastos, pagos y clientes (útil para quitar las pruebas antes de usarla en serio). Te recomendamos descargar un respaldo primero, por si acaso.</p>
-        <button class="cc-btn small" type="button" id="borrarTodoBtn" style="background:#B5322C;">Borrar Todo</button>
-      </div>
-      ` : ''}
     `;
 
     document.getElementById('descargarRespaldoBtn').addEventListener('click', ()=>{
@@ -760,23 +753,6 @@
       };
       reader.readAsText(file);
     });
-
-    const borrarTodoBtn = document.getElementById('borrarTodoBtn');
-    if(borrarTodoBtn){
-      borrarTodoBtn.addEventListener('click', (e)=>{
-        armarConfirmacion(e.currentTarget, '¿Seguro? Se borra todo. Clic de nuevo', ()=>{
-          state.lotes = [];
-          state.ventas = [];
-          state.gastos = [];
-          state.pagos = [];
-          state.clientes = [];
-          state.ultimosPrecios = {};
-          state.lotesCerrados = [];
-          render();
-          saveData();
-        });
-      });
-    }
   }
 
   // ---------- LOTES ----------
@@ -1046,7 +1022,7 @@
                 <option value="__nuevo__">+ Nuevo Cliente...</option>
                 ${listaClientes().map(c=>`<option value="${c}">${c}</option>`).join('')}
               </select>
-              <input type="text" id="ventaClienteNuevo" placeholder="Nombre del nuevo cliente" style="margin-top:6px; ${listaClientes().length===0 ? '' : 'display:none;'}" />
+              <input type="text" id="ventaClienteNuevo" placeholder="Nombre del nuevo cliente" style="margin-top:6px;" />
             </div>
             <div class="cc-field">
               <label>Fecha</label>
