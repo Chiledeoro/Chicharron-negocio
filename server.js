@@ -248,6 +248,19 @@ function soloAgrego(anterior, nuevo) {
   for (const lista of LISTAS_PROTEGIDAS) {
     const listaAnterior = Array.isArray(anterior[lista]) ? anterior[lista] : [];
     const listaNueva = Array.isArray(nuevo[lista]) ? nuevo[lista] : [];
+
+    if (lista === 'clientes') {
+      // "clientes" es una lista de puros nombres (texto), no de objetos con id.
+      // Aqui solo revisamos que ningun nombre que ya existia haya desaparecido.
+      const setNuevo = new Set(listaNueva);
+      for (const nombreViejo of listaAnterior) {
+        if (!setNuevo.has(nombreViejo)) {
+          return `Se eliminó o renombró un cliente ("${nombreViejo}") que ya existía.`;
+        }
+      }
+      continue;
+    }
+
     const mapaNuevo = new Map(listaNueva.map(item => [item.id, item]));
 
     for (const itemViejo of listaAnterior) {
