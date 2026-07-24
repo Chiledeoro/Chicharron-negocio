@@ -1,0 +1,20 @@
+{
+  "name": "Chile de Oro",
+  "short_name": "Chile de Oro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6EEE0",
+  "theme_color": "#B5322C",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
