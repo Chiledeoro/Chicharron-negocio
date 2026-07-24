@@ -775,13 +775,14 @@
             </div>
           </div>
           ${TIPOS.map(t=>`
-            <div class="cc-form-row">
-              <div class="cc-field full" style="flex-direction:row; align-items:center; justify-content:space-between; gap:10px;">
+            <div class="cc-form-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
                 <label style="margin:0; display:flex; align-items:center; gap:8px;">
                   <span class="cc-tipo-tag ${t.cls}">${t.label}</span>
                 </label>
                 <input type="number" id="loteCantidad_${t.id}" name="cantidad_${t.id}" min="0" step="1" placeholder="0" style="max-width:110px;" />
               </div>
+              <input type="text" id="loteNota_${t.id}" placeholder="Nota (ej. 3kg chile, 1kg sal...)" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--white); color:var(--char); font-family:inherit; font-size:13px;" />
             </div>
           `).join('')}
           <div class="cc-form-row">
@@ -840,6 +841,9 @@
                     <span style="width:100%; display:flex; gap:8px; margin-top:4px;">
                       <input type="number" id="editLoteCantidad_${l.id}" min="${vendido}" step="1" value="${l.cantidad}" style="width:80px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
                       <input type="text" id="editLoteUnidad_${l.id}" value="${l.unidad||''}" style="width:90px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
+                    </span>
+                    <input type="text" id="editLoteNota_${l.id}" value="${l.nota||''}" placeholder="Nota (ej. 3kg chile, 1kg sal...)" style="width:100%; margin-top:6px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:13px;" />
+                    <span style="width:100%; display:flex; gap:8px; margin-top:6px;">
                       <button class="cc-btn small" data-guardar-lote="${l.id}">Guardar</button>
                       <button class="cc-btn small ghost" data-cancelar-edit-lote="${l.id}">Cancelar</button>
                     </span>
@@ -847,13 +851,14 @@
                 `;
               }
               return `
-                <div class="cc-vitem" style="align-items:center;">
+                <div class="cc-vitem" style="align-items:center; flex-wrap:wrap;">
                   <span><span class="cc-tipo-tag ${info.cls}">${info.label}</span></span>
                   <span>Producido: <strong>${l.cantidad} ${l.unidad||''}</strong> · Disponible: <strong style="color:${disp<=0?'#B5322C':'#5C7A4A'}">${disp} ${l.unidad||''}</strong></span>
                   <span>
                     ${esAdmin() ? `<button class="cc-del" data-editar-lote="${l.id}">Editar</button>` : ''}
                     ${esAdmin() ? `<button class="cc-del" data-del-lote="${l.id}">Eliminar</button>` : ''}
                   </span>
+                  ${l.nota ? `<span class="cc-meta" style="width:100%; margin-top:2px;">📝 ${l.nota}</span>` : ''}
                 </div>
               `;
             }).join('');
@@ -921,6 +926,8 @@
         const input = document.getElementById(`loteCantidad_${t.id}`);
         const cantidad = Number(input.value) || 0;
         if(cantidad > 0){
+          const notaInput = document.getElementById(`loteNota_${t.id}`);
+          const nota = notaInput ? notaInput.value.trim() : '';
           nuevos.push({
             id: uid(),
             grupoId,
@@ -928,6 +935,7 @@
             fecha,
             cantidad,
             unidad,
+            nota,
             creadoPor: sesion.nombre
           });
         }
@@ -981,6 +989,8 @@
         if(!lote) return;
         const cantidad = Number(document.getElementById(`editLoteCantidad_${id}`).value);
         const unidad = document.getElementById(`editLoteUnidad_${id}`).value || 'Frascos';
+        const notaInput = document.getElementById(`editLoteNota_${id}`);
+        const nota = notaInput ? notaInput.value.trim() : lote.nota;
         const vendido = vendidoDeLote(id);
         if(!cantidad || cantidad < vendido){
           alert(`La cantidad no puede ser menor a lo ya vendido (${vendido}).`);
@@ -988,6 +998,7 @@
         }
         lote.cantidad = cantidad;
         lote.unidad = unidad;
+        lote.nota = nota;
         editandoLote = null;
         render();
         saveData();
