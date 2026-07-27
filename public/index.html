@@ -292,6 +292,7 @@
   let formularioLoteAbierto = false;
   let editandoGasto = null;
   let editandoLote = null;
+  let agregandoTipoALote = null;
   let editandoVentaItem = null;
   let editandoPago = null;
   let editandoCliente = null;
@@ -873,6 +874,30 @@
             const gastosGrupo = gastosDelGrupoLote(g.key);
             const utilidadGrupo = Math.round((vendidoGrupo - gastosGrupo) * 100) / 100;
             const cerrado = state.lotesCerrados.includes(g.key);
+
+            const tiposYaEnGrupo = items.map(l=>l.tipo);
+            const tiposFaltantes = TIPOS.filter(t=>!tiposYaEnGrupo.includes(t.id));
+            let agregarTipoHtml = '';
+            if(puedeCapturar() && !cerrado && tiposFaltantes.length > 0){
+              if(agregandoTipoALote === g.key){
+                agregarTipoHtml = `
+                  <div class="cc-venta-row" style="margin-top:8px; flex-wrap:wrap;">
+                    <select id="nuevoTipoLote_${g.key}" style="flex:1 1 100px;">
+                      ${tiposFaltantes.map(t=>`<option value="${t.id}">${t.label}</option>`).join('')}
+                    </select>
+                    <input type="number" id="nuevoTipoCantidad_${g.key}" min="1" step="1" placeholder="Cantidad" style="width:90px;" />
+                    <input type="text" id="nuevoTipoNota_${g.key}" placeholder="Nota (opcional)" style="width:100%; margin-top:6px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:13px;" />
+                    <div style="display:flex; gap:8px; margin-top:6px; width:100%;">
+                      <button class="cc-btn small" data-guardar-nuevo-tipo="${g.key}">Guardar</button>
+                      <button class="cc-btn small ghost" data-cancelar-nuevo-tipo="${g.key}">Cancelar</button>
+                    </div>
+                  </div>
+                `;
+              } else {
+                agregarTipoHtml = `<button class="cc-del" data-abrir-nuevo-tipo="${g.key}" style="margin-top:8px;">+ Agregar Otro Tipo</button>`;
+              }
+            }
+
             return `
               <div class="cc-vgroup" style="${cerrado ? 'opacity:0.7;' : ''}">
                 <div class="top">
@@ -883,6 +908,7 @@
                   ${puedeCapturar() ? `<button class="cc-del" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir Lote' : 'Cerrar Lote'}</button>` : ''}
                 </div>
                 <div class="items">${itemsHtml}</div>
+                ${agregarTipoHtml}
                 <div class="total-row">
                   <span>Vendido ${money(vendidoGrupo)} · Gastos ${money(gastosGrupo)}</span>
                   <span style="color:${utilidadGrupo>=0?'#5C7A4A':'#B5322C'}">Utilidad ${money(utilidadGrupo)}</span>
@@ -900,6 +926,53 @@
 
     bodyEl.querySelectorAll('[data-lote-estado-filter]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ loteEstadoFilter = btn.dataset.loteEstadoFilter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-abrir-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        agregandoTipoALote = btn.dataset.abrirNuevoTipo;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        agregandoTipoALote = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const grupoKey = btn.dataset.guardarNuevoTipo;
+        const grupo = agruparLotes().find(g=>g.key===grupoKey);
+        if(!grupo) return;
+        const tipoSelect = document.getElementById(`nuevoTipoLote_${grupoKey}`);
+        const cantidadInput = document.getElementById(`nuevoTipoCantidad_${grupoKey}`);
+        const notaInput = document.getElementById(`nuevoTipoNota_${grupoKey}`);
+        const tipo = tipoSelect.value;
+        const cantidad = Number(cantidadInput.value) || 0;
+        const nota = notaInput ? notaInput.value.trim() : '';
+        if(cantidad <= 0){
+          alert('Escribe una cantidad mayor a 0.');
+          return;
+        }
+        const fecha = grupo.items[0].fecha;
+        const unidad = grupo.items[0].unidad || 'Frascos';
+        state.lotes.push({
+          id: uid(),
+          grupoId: grupoKey,
+          tipo,
+          fecha,
+          cantidad,
+          unidad,
+          nota,
+          creadoPor: sesion.nombre
+        });
+        agregandoTipoALote = null;
+        render();
+        saveData();
+      });
     });
 
     const toggleFormLoteBtn = bodyEl.querySelector('[data-toggle-form-lote]');
