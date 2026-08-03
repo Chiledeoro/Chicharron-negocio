@@ -340,7 +340,13 @@
       if(btn.dataset.armado === '1' && btn._resetConfirmacion) btn._resetConfirmacion();
     }, 3000);
   }
-  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function todayStr(){
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
   function money(n){
     const num = Number(n) || 0;
     const rounded = Math.round(Math.abs(num) * 100) / 100;
