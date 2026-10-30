@@ -1,0 +1,2797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chile de Oro - Control de Negocio</title>
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#2b1611" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Young+Serif&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --chile-red:#a8291f;
+    --habanero:#d9682a;
+    --masa:#f5f0e8;
+    --char:#241b16;
+    --serrano:#5f8a3e;
+    --jalapeno:#2f5e45;
+    --canasta:#b8892b;
+    --money:#3f6b3a;
+    --muted:#7a6a5e;
+    --line:#e8dfd2;
+    --white:#fffdf9;
+    --side:#2b1611;
+    --gold:#f5d58a;
+    --seg:#ece4d6;
+  }
+  .cc-app.dark{
+    --masa:#181210;
+    --char:#F0E6DA;
+    --line:rgba(255,255,255,0.14);
+    --white:#241B16;
+    --muted:#b5a596;
+    --seg:#33261f;
+    --money:#8dbb86;
+  }
+  .cc-app.dark .cc-venta-row input,
+  .cc-app.dark .cc-venta-row select,
+  .cc-app.dark .cc-field input,
+  .cc-app.dark .cc-field select{ background: var(--masa); color: var(--char); }
+  .cc-app.dark ::placeholder{ color:#8a7b6d; }
+  .cc-app.dark .cc-bottom, .cc-app.dark .cc-sheet-box{ background:#241B16; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{ margin:0; padding:0; }
+  body{ background:#e9e1d5; font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif; -webkit-font-smoothing:antialiased; }
+  input,select,button,textarea{ font-family:inherit; }
+  .cc-app{
+    font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-variant-numeric: tabular-nums;
+    background: var(--masa);
+    color: var(--char);
+    min-height: 100vh;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+
+  /* ---------- menú lateral (computadora) ---------- */
+  .cc-side{ display:none; }
+  .cc-brand{ display:flex; align-items:center; gap:12px; }
+  .cc-logo{ width:44px; height:44px; border-radius:12px; object-fit:cover; flex:none; background:#a8291f; }
+  .cc-brand-name{ font-family:'Young Serif',Georgia,serif; font-size:20px; line-height:1.1; color:#fff8ee; }
+  .cc-brand-sub{ font-size:12px; color:#c9b2a0; margin-top:2px; }
+  .cc-nav{ display:flex; flex-direction:column; gap:2px; }
+  .cc-tab{
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:10px 12px; border:0; border-radius:10px; background:transparent;
+    color:#f5ece0; font-size:15px; font-weight:500; text-align:left; cursor:pointer;
+  }
+  .cc-tab .n{ font-size:11px; color:#a58f7e; width:18px; }
+  .cc-tab:hover{ background:rgba(255,255,255,0.06); }
+  .cc-tab.active{ background:#f5f0e8; color:#a8291f; font-weight:700; }
+  .cc-tab.active .n{ color:#a8291f; }
+  .cc-badge{ margin-left:auto; background:#d9682a; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; }
+  .cc-userbox{ margin-top:auto; background:rgba(255,255,255,0.07); border-radius:14px; padding:12px; display:flex; align-items:center; gap:10px; }
+  .cc-avatar{ width:34px; height:34px; border-radius:50%; background:#f5d58a; color:#2b1611; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .cc-user-name{ font-size:13px; font-weight:700; color:#fff8ee; }
+  .cc-user-rol{ font-size:11.5px; color:#c9b2a0; }
+  .cc-salir{ margin-left:auto; background:transparent; border:1px solid rgba(255,255,255,0.25); color:#f5ece0; border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer; }
+  .cc-theme-toggle{ background:rgba(255,255,255,0.1); border:0; border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:#f5ece0; }
+
+  /* ---------- barra superior e inferior (celular) ---------- */
+  .cc-top{
+    position:sticky; top:0; z-index:20; background:#2b1611; color:#fff8ee;
+    display:flex; align-items:center; gap:10px; padding:10px 16px;
+  }
+  .cc-top .cc-logo{ width:36px; height:36px; border-radius:10px; }
+  .cc-top .cc-brand-name{ font-size:19px; }
+  .cc-top .cc-avatar{ margin-left:auto; }
+  .cc-bottom{
+    position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--white);
+    border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(5,1fr);
+    align-items:center; height:calc(62px + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom);
+  }
+  .cc-bt{ background:none; border:0; font-size:12.5px; font-weight:600; color:var(--muted); height:62px; cursor:pointer; position:relative; }
+  .cc-bt.active{ color:#a8291f; }
+  .cc-bt.active::before{ content:''; position:absolute; top:0; left:30%; right:30%; height:3px; border-radius:0 0 3px 3px; background:#a8291f; }
+  .cc-bt-plus{
+    background:#a8291f; color:#fff; border:0; border-radius:16px; width:64px; height:60px;
+    margin:-22px auto 0; font-weight:700; font-size:12px; line-height:1.1; cursor:pointer;
+    box-shadow:0 6px 14px rgba(168,41,31,0.35);
+  }
+  .cc-bt-plus b{ display:block; font-size:22px; font-weight:600; }
+  .cc-sheet{ position:fixed; inset:0; z-index:40; background:rgba(36,27,22,0.45); display:none; align-items:flex-end; }
+  .cc-sheet.open{ display:flex; }
+  .cc-sheet-box{ width:100%; background:var(--white); border-radius:20px 20px 0 0; padding:14px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .cc-sheet-grip{ width:40px; height:4px; border-radius:4px; background:var(--line); margin:0 auto 12px; }
+  .cc-sheet-item{ display:block; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); padding:15px 4px; font-size:16px; font-weight:600; color:var(--char); cursor:pointer; }
+  .cc-sheet-item:last-child{ border-bottom:0; }
+  .cc-sheet-item.salir{ color:#a8291f; }
+
+  .cc-app.nologin .cc-side,
+  .cc-app.nologin .cc-top,
+  .cc-app.nologin .cc-bottom{ display:none !important; }
+
+  .cc-main{ min-width:0; padding-bottom:calc(84px + env(safe-area-inset-bottom)); }
+  .cc-body{ padding:16px; }
+
+  @media (min-width:800px){
+    .cc-app{ display:flex; }
+    .cc-side{
+      display:flex; flex-direction:column; gap:28px; flex:0 0 236px; width:236px;
+      position:sticky; top:0; height:100vh; background:#2b1611; color:#f5ece0; padding:24px 16px;
+    }
+    .cc-top, .cc-bottom, .cc-sheet{ display:none !important; }
+    .cc-main{ flex:1; padding-bottom:24px; }
+    .cc-body{ padding:28px 32px 40px; max-width:1180px; }
+    .cc-app.nologin .cc-main{ width:100%; }
+  }
+
+  /* ---------- títulos y tarjetas ---------- */
+  .cc-pagehead{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .cc-title{ font-family:'Young Serif',Georgia,serif; font-weight:400; font-size:34px; line-height:1.05; margin:0; }
+  .cc-sub{ color:var(--muted); font-size:14px; margin-top:4px; }
+  .cc-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cc-card{
+    background: var(--white); border:1px solid var(--line); border-radius:16px;
+    padding:18px; margin-bottom:14px;
+  }
+  .cc-grid3{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .cc-stat{ background:var(--white); border:1px solid var(--line); border-radius:16px; padding:16px; }
+  .cc-stat .label{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:700; margin-bottom:6px; }
+  .cc-stat .value{ font-size:26px; font-weight:400; font-family:'Young Serif',Georgia,serif; }
+  .cc-stat.pos .value{ color:var(--money); }
+  .cc-stat.neg .value{ color:var(--chile-red); }
+  .cc-stat.warn .value{ color:#b8641f; }
+  .cc-cents{ font-size:0.55em; opacity:0.6; }
+  .cc-dash{ display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:14px; }
+  .cc-hero{ background:#a8291f; color:#fff; border-radius:16px; padding:18px 20px; }
+  .cc-hero .label{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#f5d58a; font-weight:700; }
+  .cc-hero .big{ font-family:'Young Serif',Georgia,serif; font-size:44px; line-height:1.1; margin:8px 0 6px; }
+  .cc-hero .small{ font-size:13px; opacity:0.85; }
+  .cc-pair{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .cc-pair .cc-stat .value{ font-size:28px; }
+  .cc-two{ display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width:800px){
+    .cc-dash{ grid-template-columns:1.1fr 1fr 1fr; }
+    .cc-dash .cc-pair{ display:contents; }
+    .cc-two{ grid-template-columns:1.15fr 1fr; align-items:start; }
+  }
+  .cc-cardhead{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  .cc-cardhead h3{ margin:0; font-size:16px; font-weight:700; }
+  .cc-cardhead .sub{ font-size:12.5px; color:var(--muted); }
+  .cc-chip{ background:#f6dcd8; color:#a8291f; font-weight:700; font-size:12.5px; padding:4px 12px; border-radius:20px; }
+  .cc-debt{ display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+  .cc-debt .av{ width:38px; height:38px; border-radius:50%; background:#f0e4d6; color:#6b4a35; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .cc-debt .nm{ font-weight:600; font-size:15px; }
+  .cc-debt .dt{ font-size:12.5px; color:var(--muted); }
+  .cc-debt .amt{ margin-left:auto; text-align:right; font-weight:700; color:#a8291f; }
+  .cc-recordar{ display:block; margin-left:auto; background:none; border:0; padding:6px 0 0 12px; color:var(--money); font-weight:700; font-size:13px; cursor:pointer; }
+  .cc-inv{ margin-top:12px; }
+  .cc-inv .row{ display:flex; align-items:center; gap:8px; font-size:15px; }
+  .cc-inv .row b{ margin-left:auto; }
+  .cc-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .cc-bar{ height:7px; border-radius:7px; background:#efe6d9; margin:7px 0 14px; overflow:hidden; }
+  .cc-bar i{ display:block; height:100%; border-radius:7px; }
+  .cc-agotado{ color:#a8291f; font-weight:700; }
+  .cc-backup{ border:1.5px dashed #d8ccb8; border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .cc-backup .t{ font-weight:700; font-size:14px; }
+  .cc-backup .d{ font-size:12.5px; color:var(--muted); }
+
+  h3.cc-h{ font-size:16px; font-weight:700; margin:0 0 12px; color:var(--char); }
+  .cc-form-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .cc-field{ display:flex; flex-direction:column; gap:4px; }
+  .cc-field.full{ grid-column:1 / -1; }
+  .cc-field label{ font-size:12px; font-weight:600; color:var(--muted); }
+  .cc-field input, .cc-field select{
+    padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+    font-size:14px; background:var(--masa); color:var(--char); min-height:42px;
+  }
+  .cc-field input:focus, .cc-field select:focus{ outline:2px solid var(--habanero); outline-offset:1px; }
+  .cc-checkbox-row{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; }
+  .cc-btn{
+    background:var(--chile-red); color:#fff; border:1px solid var(--chile-red);
+    padding:11px 18px; border-radius:10px; font-size:14px; font-weight:700;
+    cursor:pointer; width:100%; min-height:44px;
+  }
+  .cc-btn:hover{ background:#8a2018; }
+  .cc-btn.ghost{ background:var(--white); color:var(--char); border:1px solid var(--line); }
+  .cc-btn.ghost:hover{ background:var(--masa); }
+  .cc-btn[style*="25D366"]{ border-color:#25D366; }
+  .cc-btn.small{ width:auto; padding:8px 14px; font-size:13px; min-height:38px; }
+  .cc-list-item{ border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:8px; background:var(--white); }
+  .cc-list-item .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .cc-tipo-tag{ font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; color:#fff; }
+  .cc-tipo-tag.habanero{ background:#d9682a; }
+  .cc-tipo-tag.serrano{ background:#5f8a3e; }
+  .cc-tipo-tag.jalapeno{ background:#2f5e45; }
+  .cc-tipo-tag.canasta{ background:#b8892b; }
+  .cc-meta{ font-size:12.5px; color:var(--muted); }
+  .cc-row-detail{ display:flex; justify-content:space-between; gap:8px; font-size:14px; margin-top:4px; }
+  .cc-empty{ text-align:center; padding:30px 10px; color:#a8998a; font-size:13px; }
+  .cc-pill{ font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .cc-pill.pagado{ background:#e0ecda; color:#3f6b3a; }
+  .cc-pill.pendiente{ background:#f8dcd8; color:#a8291f; }
+  .cc-filterbar{ display:flex; gap:2px; margin-bottom:14px; background:var(--seg); padding:4px; border-radius:12px; overflow-x:auto; }
+  .cc-filter-btn{
+    flex:1; text-align:center; padding:8px 10px; border-radius:9px; font-size:13px; white-space:nowrap;
+    font-weight:600; cursor:pointer; border:0; background:transparent; color:var(--muted);
+  }
+  .cc-filter-btn.active{ background:var(--white); color:var(--char); box-shadow:0 1px 2px rgba(36,27,22,0.12); }
+  .cc-loading{ text-align:center; padding:40px; color:var(--muted); font-size:13px; }
+  .cc-del{ background:none; border:none; color:#c99; font-size:12px; cursor:pointer; padding:6px 6px; }
+  .cc-del:hover{ color:var(--chile-red); }
+  .cc-venta-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:10px 12px; background:var(--masa); border-radius:12px; margin-bottom:8px; }
+  .cc-venta-row.disabled{ opacity:0.5; }
+  .cc-venta-row select{ flex:1 1 110px; min-width:90px; padding:8px; border:1px solid var(--line); border-radius:9px; font-size:13px; background:var(--white); color:var(--char); }
+  .cc-venta-row input{ width:70px; padding:8px 6px; border:1px solid var(--line); border-radius:9px; font-size:13px; background:var(--white); color:var(--char); text-align:center; }
+  .cc-venta-row .cc-vlabel{ font-size:10.5px; color:var(--muted); display:block; margin-bottom:2px; }
+  .cc-vgroup{ border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:8px; background:var(--white); }
+  .cc-vgroup .top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .cc-vgroup .cliente{ font-size:15px; font-weight:700; }
+  .cc-vgroup .items{ display:flex; flex-direction:column; gap:3px; margin:6px 0; }
+  .cc-vitem{ display:flex; justify-content:space-between; font-size:13px; color:var(--muted); }
+  .cc-vgroup .total-row{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:14px; font-weight:700; }
+
+
+  /* ---------- panel lateral (registrar producción / venta) ---------- */
+  .cc-panel-bg{ position:fixed; inset:0; z-index:50; background:rgba(36,27,22,0.45); }
+  .cc-panel{
+    position:fixed; z-index:51; top:0; right:0; bottom:0; width:100%; max-width:100%;
+    background:var(--white); display:flex; flex-direction:column; box-shadow:-8px 0 30px rgba(36,27,22,0.18);
+  }
+  @media (min-width:800px){ .cc-panel{ width:460px; } }
+  .cc-panel-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--line); }
+  .cc-panel-head h3{ margin:0; font-family:'Young Serif',Georgia,serif; font-weight:400; font-size:22px; }
+  .cc-x{ border:0; background:var(--masa); color:var(--char); width:40px; height:40px; border-radius:50%; font-size:16px; cursor:pointer; }
+  .cc-panel-body{ flex:1; overflow-y:auto; padding:16px 18px; -webkit-overflow-scrolling:touch; }
+  .cc-panel-foot{ border-top:1px solid var(--line); padding:12px 18px calc(14px + env(safe-area-inset-bottom)); background:var(--white); }
+  .cc-foot-total{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .cc-foot-total .lbl{ color:var(--muted); font-size:13.5px; }
+  .cc-foot-total strong{ font-family:'Young Serif',Georgia,serif; font-weight:400; font-size:28px; }
+  .cc-tcard{ background:var(--masa); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .cc-trow{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .cc-tname{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; }
+  .cc-tsub{ font-size:12.5px; color:var(--muted); font-weight:500; }
+  .cc-step{ display:inline-flex; align-items:center; gap:6px; }
+  .cc-step-btn{ width:44px; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--white); color:var(--char); font-size:22px; font-weight:600; cursor:pointer; line-height:1; }
+  .cc-step-btn:active{ background:var(--seg); }
+  .cc-step input{ width:64px; height:44px; text-align:center; border:1px solid var(--line); border-radius:12px; background:var(--white); color:var(--char); font-size:18px; font-weight:700; }
+  .cc-price{ display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:13.5px; color:var(--muted); }
+  .cc-price input{ margin-left:auto; width:110px; height:42px; text-align:right; border:1px solid var(--line); border-radius:10px; background:var(--white); color:var(--char); font-weight:700; padding:0 10px; }
+  .cc-note{ width:100%; margin-top:8px; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--white); color:var(--char); }
+  .cc-seg3{ display:flex; gap:4px; background:var(--seg); padding:4px; border-radius:12px; margin-bottom:10px; }
+  .cc-seg3 button{ flex:1; border:0; background:transparent; border-radius:9px; padding:11px 6px; font-weight:600; font-size:14px; color:var(--muted); cursor:pointer; min-height:44px; }
+  .cc-seg3 button.active{ background:var(--white); color:var(--char); box-shadow:0 1px 2px rgba(36,27,22,0.14); }
+  .cc-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:14px 0 8px; }
+
+  /* ---------- tarjeta de lote ---------- */
+  .cc-lcard{ background:var(--white); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:14px; }
+  .cc-lhead{ display:flex; align-items:center; gap:12px; padding:16px; }
+  .cc-lnum{ font-family:'Young Serif',Georgia,serif; font-size:20px; width:48px; height:48px; border-radius:12px; background:#f5ece0; color:#8f2219; display:flex; align-items:center; justify-content:center; flex:none; }
+  .cc-app.dark .cc-lnum{ background:#33261f; color:#f5d58a; }
+  .cc-lline{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:16px; }
+  .cc-pill.neutral{ background:#ece4d6; color:#6b5d50; }
+  .cc-litems{ border-top:1px solid var(--line); }
+  .cc-lrow{ padding:12px 16px; border-bottom:1px solid var(--line); font-size:14px; }
+  .cc-lrow-main{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; }
+  .cc-lrow-name{ flex:1 1 140px; display:flex; align-items:center; gap:8px; }
+  .cc-lrow-bar{ flex:2 1 200px; display:flex; align-items:center; gap:10px; }
+  .cc-lrow-bar .cc-bar{ flex:1; margin:0; height:6px; }
+  .cc-lrow-num{ font-size:13px; color:var(--muted); white-space:nowrap; }
+  .cc-lrow-num b{ font-size:14px; color:var(--char); }
+  .cc-lrow-act{ display:flex; gap:4px; margin-top:4px; align-items:center; flex-wrap:wrap; }
+  .cc-lfoot{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .cc-lfoot > div{ padding:12px 16px; display:flex; flex-direction:column; gap:3px; border-right:1px solid var(--line); }
+  .cc-lfoot > div:last-child{ border-right:0; }
+  .cc-lfoot span{ font-size:12px; color:var(--muted); }
+  .cc-lfoot b{ font-size:15px; }
+  .cc-lfoot .util{ background:#eef3e8; }
+  .cc-lfoot .util span, .cc-lfoot .util b{ color:#3f6b3a; }
+  .cc-lfoot .util.neg{ background:#fbeae7; }
+  .cc-lfoot .util.neg span, .cc-lfoot .util.neg b{ color:#a8291f; }
+  .cc-app.dark .cc-lfoot .util{ background:#1f2a1c; }
+  .cc-app.dark .cc-lfoot .util.neg{ background:#33191a; }
+  .cc-venta-row .cc-searchbox{ width:100%; flex:1 1 100%; text-align:left; font-size:15px; }
+  .cc-tcard .cc-trow{ flex-wrap:nowrap; }
+  .cc-tname{ min-width:0; }
+  .cc-searchbox{ width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--white); color:var(--char); font-size:15px; }
+
+  /* ---------- listas y pantallas (clientes, gastos, caja, utilidades, usuarios) ---------- */
+  .cc-toolrow{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .cc-toolrow .cc-searchbox{ flex:2 1 220px; width:auto; }
+  .cc-addrow{ flex:1 1 260px; display:flex; gap:6px; }
+  .cc-addrow input{ flex:1 1 auto; width:0; min-width:0; border:1px solid var(--line); background:var(--white); color:var(--char); border-radius:10px; padding:12px 14px; font-size:15px; }
+  .cc-addrow .cc-btn{ width:auto; padding:0 18px; }
+  .cc-listcard{ background:var(--white); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:14px; }
+  .cc-rowi{ display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); }
+  .cc-rowi:last-child{ border-bottom:0; }
+  .cc-rowi .grow{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .cc-rowi .nm{ font-size:15px; font-weight:600; overflow-wrap:anywhere; }
+  .cc-rowi .sb{ font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+  .cc-rowi .rt{ display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none; }
+  .cc-rowi .amt{ font-size:15px; font-weight:700; }
+  .cc-rowi .sm{ font-size:12px; color:var(--muted); }
+  .cc-av{ width:38px; height:38px; border-radius:50%; background:#f1e6d8; color:#6b4a36; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:none; }
+  .cc-app.dark .cc-av{ background:#33261f; color:#f5d58a; }
+  .cc-linkbtn{ background:none; border:0; padding:6px 0; color:var(--muted); font-weight:600; font-size:13px; cursor:pointer; min-height:32px; }
+  .cc-linkbtn.danger{ color:#a8291f; }
+  .cc-linkbtn.ok{ color:var(--money); }
+  .cc-links{ display:flex; gap:4px 14px; flex-wrap:wrap; }
+  .cc-linkbtn{ text-align:left; }
+  .cc-rowi .rt{ max-width:48%; text-align:right; }
+  .cc-rowi .amt{ overflow-wrap:anywhere; }
+  .cc-tagl{ font-size:12px; font-weight:700; border-radius:6px; padding:2px 7px; background:#f5ece0; color:#8f2219; }
+  .cc-app.dark .cc-tagl{ background:#33261f; color:#f5d58a; }
+  .cc-formcard{ background:var(--white); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
+  .cc-formcard h3{ margin:0 0 12px; font-size:16px; font-weight:700; }
+  .cc-gform{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; align-items:end; }
+  .cc-gform .full{ grid-column:1 / -1; }
+  .cc-editbox{ padding:14px 16px; background:var(--masa); border-bottom:1px solid var(--line); }
+  .cc-hero.green{ background:#3f6b3a; }
+  .cc-hero.green .label, .cc-hero.green .small{ color:#d7e6cf; opacity:1; }
+  .cc-hero.red .big{ color:#fff; }
+  .cc-stripe3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--line); }
+  .cc-stripe3 > div{ padding:12px 16px; display:flex; flex-direction:column; gap:3px; border-right:1px solid var(--line); }
+  .cc-stripe3 > div:last-child{ border-right:0; }
+  .cc-stripe3 span{ font-size:12px; color:var(--muted); }
+  .cc-stripe3 b{ font-size:15px; }
+  .cc-bigcard{ background:var(--white); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:14px; }
+  .cc-bigcard .top{ padding:18px; display:flex; flex-direction:column; gap:6px; }
+  .cc-bigcard .top .lbl{ font-size:12px; color:var(--muted); font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+  .cc-bigcard .top .num{ font-family:'Young Serif',Georgia,serif; font-size:38px; line-height:1; }
+  .cc-sect{ font-size:16px; font-weight:700; padding:6px 0 10px; }
+  .cc-ubar{ height:10px; border-radius:999px; background:#f1e9dd; overflow:hidden; display:flex; }
+  .cc-ubar i{ display:block; height:100%; }
+  .cc-urow{ display:flex; flex-direction:column; gap:8px; padding:16px; border-bottom:1px solid var(--line); }
+  .cc-urow:last-child{ border-bottom:0; }
+  .cc-urow .l1{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .cc-urow .t{ display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600; flex-wrap:wrap; }
+  .cc-twocol{ display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start; }
+  .cc-twocol > .cc-listcard{ flex:2 1 320px; margin-bottom:0; }
+  .cc-twocol > .cc-formcard{ flex:1 1 280px; margin-bottom:0; }
+  .cc-twocol > *{ min-width:0; }
+  .cc-field{ min-width:0; }
+  .cc-field select, .cc-field input{ max-width:100%; min-width:0; }
+  .cc-rolpill{ font-size:12px; font-weight:700; border-radius:999px; padding:3px 10px; white-space:nowrap; }
+  .cc-rol-admin{ background:#f6dcd8; color:#a8291f; }
+  .cc-rol-usuario{ background:#e0ecda; color:#3f6b3a; }
+  .cc-rol-vista{ background:#ece4d6; color:#6b5d50; }
+  .cc-dotm{ width:8px; height:8px; border-radius:50%; flex:none; }
+  @media (max-width:799px){
+    input, select, textarea{ font-size:16px !important; }
+    .cc-title{ font-size:30px; }
+    .cc-actions .cc-btn{ flex:1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cc-app nologin" id="ccApp">
+  <aside class="cc-side">
+    <div class="cc-brand">
+      <img class="cc-logo" src="/apple-touch-icon.png" alt="Chile de Oro" />
+      <div>
+        <div class="cc-brand-name">Chile de Oro</div>
+        <div class="cc-brand-sub">Control de negocio</div>
+      </div>
+    </div>
+    <nav class="cc-nav" id="ccTabs"></nav>
+    <div class="cc-userbox">
+      <div class="cc-avatar" id="ccAvatarSide">--</div>
+      <div style="min-width:0;">
+        <div class="cc-user-name" id="ccUsuarioActual">Usuario</div>
+        <div class="cc-user-rol" id="ccRolActual"></div>
+      </div>
+      <button class="cc-salir" id="logoutBtn" type="button">Salir</button>
+    </div>
+    <button class="cc-theme-toggle" id="temaToggleBtn" type="button">🌙 Modo oscuro</button>
+  </aside>
+
+  <header class="cc-top">
+    <img class="cc-logo" src="/apple-touch-icon.png" alt="Chile de Oro" />
+    <div class="cc-brand-name">Chile de Oro</div>
+    <div class="cc-avatar" id="ccAvatarTop">--</div>
+  </header>
+
+  <main class="cc-main">
+    <div class="cc-body" id="ccBody">
+      <div class="cc-loading">Cargando datos...</div>
+    </div>
+  </main>
+
+  <nav class="cc-bottom" id="ccBottom"></nav>
+  <div class="cc-sheet" id="ccSheet">
+    <div class="cc-sheet-box">
+      <div class="cc-sheet-grip"></div>
+      <div id="ccSheetList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TIPOS = [
+    {id:'habanero', label:'Habanero', cls:'habanero'},
+    {id:'serrano', label:'Serrano', cls:'serrano'},
+    {id:'jalapeno', label:'Jalapeño', cls:'jalapeno'},
+    {id:'canasta', label:'Canasta Navideña', cls:'canasta'}
+  ];
+
+  let state = { lotes: [], ventas: [], gastos: [], pagos: [], clientes: [], ultimosPrecios: {}, temaOscuro: false, lotesCerrados: [], saldoInicial: 0 };
+  let activeTab = 'resumen';
+  let ventaFilter = 'todas';
+  let loteFilter = 'todas';
+  let loteEstadoFilter = 'todas';
+  let ventaBusqueda = '';
+  let clienteBusqueda = '';
+  let tiposExpandido = {};
+  let formularioVentaAbierto = false;
+  let formularioLoteAbierto = false;
+  let editandoGasto = null;
+  let editandoLote = null;
+  let agregandoTipoALote = null;
+  let editandoVentaItem = null;
+  let editandoPago = null;
+  let editandoCliente = null;
+  let loaded = false;
+  let sesion = null;
+  let errorLogin = '';
+
+  const app = document.getElementById('ccApp');
+  const tabsEl = document.getElementById('ccTabs');
+  const bodyEl = document.getElementById('ccBody');
+
+  const TABS = [
+    {id:'resumen', label:'Resumen', icon:'📊'},
+    {id:'lotes', label:'Lotes', icon:'📦'},
+    {id:'ventas', label:'Ventas', icon:'🌶️'},
+    {id:'clientes', label:'Clientes', icon:'👥'},
+    {id:'gastos', label:'Gastos', icon:'💸'},
+    {id:'caja', label:'Caja', icon:'💰'},
+    {id:'utilidades', label:'Utilidades', icon:'📈'},
+    {id:'usuarios', label:'Usuarios', icon:'🔑', soloAdmin:true}
+  ];
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  const COLOR_TIPO = { habanero:'#d9682a', serrano:'#5f8a3e', jalapeno:'#2f5e45', canasta:'#b8892b' };
+  const MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function fechaBonita(f){
+    const p = String(f||'').split('-');
+    return p.length===3 ? `${Number(p[2])} ${MESES_CORTOS[Number(p[1])-1]} ${p[0]}` : f;
+  }
+  // botones − / + junto a una cantidad
+  function stepperHtml(id, max){
+    return `<div class="cc-step">
+      <button type="button" class="cc-step-btn" data-step="${id}" data-d="-1" aria-label="Menos">−</button>
+      <input type="number" id="${id}" min="0" step="1" placeholder="0" inputmode="numeric" ${max!=null?`max="${max}"`:''} />
+      <button type="button" class="cc-step-btn" data-step="${id}" data-d="1" aria-label="Más">+</button>
+    </div>`;
+  }
+  function activarSteppers(root){
+    root.querySelectorAll('[data-step]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const inp = document.getElementById(b.dataset.step);
+        if(!inp) return;
+        const max = inp.max !== '' ? Number(inp.max) : Infinity;
+        let v = (Number(inp.value) || 0) + Number(b.dataset.d);
+        v = Math.max(0, Math.min(max, v));
+        inp.value = v === 0 ? '' : v;
+        inp.dispatchEvent(new Event('input', { bubbles:true }));
+      });
+    });
+  }
+
+  // Two-click confirmation, since native confirm()/prompt() dialogs don't work reliably in this environment
+  function armarConfirmacion(btn, textoConfirmar, accion){
+    if(btn.dataset.armado === '1'){
+      accion();
+      return;
+    }
+    btn.dataset.armado = '1';
+    const textoOriginal = btn.textContent;
+    const bgOriginal = btn.style.background;
+    const colorOriginal = btn.style.color;
+    btn.textContent = textoConfirmar;
+    btn.style.background = '#B5322C';
+    btn.style.color = '#fff';
+    btn._resetConfirmacion = ()=>{
+      btn.dataset.armado = '';
+      btn.textContent = textoOriginal;
+      btn.style.background = bgOriginal;
+      btn.style.color = colorOriginal;
+    };
+    setTimeout(()=>{
+      if(btn.dataset.armado === '1' && btn._resetConfirmacion) btn._resetConfirmacion();
+    }, 3000);
+  }
+  function todayStr(){
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  function money(n){
+    const num = Number(n) || 0;
+    const rounded = Math.round(Math.abs(num) * 100) / 100;
+    const formatted = rounded.toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+    return (num < 0 ? '-$' : '$') + formatted;
+  }
+  function tipoInfo(id){ return TIPOS.find(t=>t.id===id) || TIPOS[0]; }
+
+  // ---------- Sesion / autenticacion ----------
+  function esAdmin(){ return !!(sesion && sesion.rol === 'admin'); }
+  function puedeCapturar(){ return !!(sesion && sesion.rol !== 'vista'); }
+  function etiquetaRol(rol){
+    if(rol === 'admin') return 'Administrador';
+    if(rol === 'vista') return 'Solo Vista';
+    return 'Usuario';
+  }
+
+  function guardarSesion(datos){
+    sesion = datos;
+    localStorage.setItem('cc_sesion', JSON.stringify(datos));
+  }
+
+  function cerrarSesion(){
+    sesion = null;
+    localStorage.removeItem('cc_sesion');
+    activeTab = 'resumen';
+    render();
+  }
+
+  async function apiFetch(url, options){
+    options = options || {};
+    options.headers = options.headers || {};
+    if(sesion && sesion.token){
+      options.headers['Authorization'] = 'Bearer ' + sesion.token;
+    }
+    const res = await fetch(url, options);
+    if(res.status === 401){
+      cerrarSesion();
+    }
+    return res;
+  }
+
+  let dataVersion = null;
+
+  async function loadData(){
+    try{
+      const res = await apiFetch('/api/estado');
+      if(res.ok){
+        const parsed = await res.json();
+        state.lotes = parsed.lotes || [];
+        state.ventas = parsed.ventas || [];
+        state.gastos = parsed.gastos || [];
+        state.pagos = parsed.pagos || [];
+        state.clientes = parsed.clientes || [];
+        state.ultimosPrecios = parsed.ultimosPrecios || {};
+        state.temaOscuro = parsed.temaOscuro || false;
+        state.lotesCerrados = parsed.lotesCerrados || [];
+        state.saldoInicial = parsed.saldoInicial || 0;
+        const version = res.headers.get('X-Data-Version');
+        if(version) dataVersion = Number(version);
+      }
+    }catch(e){
+      console.error('Error cargando datos', e);
+    }
+    // normaliza mayúscula inicial en unidades ya guardadas (datos viejos que quedaron en minúscula)
+    state.lotes.forEach(l=>{
+      if(l.unidad) l.unidad = l.unidad.charAt(0).toUpperCase() + l.unidad.slice(1);
+    });
+    loaded = true;
+    aplicarTema();
+    render();
+  }
+
+  async function saveData(intento){
+    intento = intento || 1;
+    try{
+      const res = await apiFetch('/api/estado', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Data-Version': dataVersion != null ? String(dataVersion) : ''
+        },
+        body: JSON.stringify(state)
+      });
+      if(res.status === 409){
+        alert('Alguien más (tu esposa, hermana, o tú desde otro aparato) guardó cambios justo ahora. Para no perder nada, vamos a traer lo más reciente — vuelve a intentar tu cambio después.');
+        await loadData();
+        return;
+      }
+      if(res.status === 403){
+        const cuerpo = await res.json().catch(()=>({}));
+        alert(cuerpo.error || 'Tu cuenta no tiene permiso para hacer ese cambio.');
+        await loadData(); // recupera los datos reales, deshaciendo el intento bloqueado
+        return;
+      }
+      if(!res.ok) throw new Error('Respuesta no OK: ' + res.status);
+      const version = res.headers.get('X-Data-Version');
+      if(version) dataVersion = Number(version);
+    }catch(e){
+      console.error('Error guardando datos (intento ' + intento + ')', e);
+      if(intento < 3){
+        setTimeout(()=>saveData(intento + 1), 1000 * intento);
+      }
+    }
+  }
+
+  function vendidoDeLote(loteId){
+    return state.ventas
+      .filter(v => v.loteId === loteId)
+      .reduce((sum, v) => sum + Number(v.cantidad), 0);
+  }
+
+  function disponibleDeLote(lote){
+    return Number(lote.cantidad) - vendidoDeLote(lote.id);
+  }
+
+  // --- helpers for grouped lotes (folio numbering) ---
+  function agruparLotes(){
+    const grupos = {};
+    state.lotes.forEach(l=>{
+      const key = l.grupoId || l.id;
+      if(!grupos[key]) grupos[key] = [];
+      grupos[key].push(l);
+    });
+    let lista = Object.keys(grupos).map(key=>({ key, items: grupos[key] }));
+    lista.sort((a,b)=> a.key.localeCompare(b.key));
+    lista.forEach((g,idx)=>{ g.folio = idx + 1; });
+    return lista;
+  }
+
+  function folioDeLote(loteId){
+    const grupos = agruparLotes();
+    for(const g of grupos){
+      if(g.items.some(l=>l.id===loteId)) return g.folio;
+    }
+    return null;
+  }
+
+  function grupoDeLote(loteId){
+    const grupos = agruparLotes();
+    return grupos.find(g=>g.items.some(l=>l.id===loteId)) || null;
+  }
+
+  function vendidoDelLote(loteId){
+    return state.ventas
+      .filter(v=>v.loteId===loteId)
+      .reduce((s,v)=>s+Number(v.precioTotal),0);
+  }
+
+  function vendidoDelGrupoLote(grupo){
+    return grupo.items.reduce((s,l)=>s+vendidoDelLote(l.id),0);
+  }
+
+  function gastosDelGrupoLote(grupoKey){
+    return state.gastos
+      .filter(g=>g.destino===grupoKey)
+      .reduce((s,g)=>s+Number(g.monto),0);
+  }
+
+  // --- helpers for grouped ventas (folio, totals, payments) ---
+  function agruparVentas(){
+    const grupos = {};
+    state.ventas.forEach(v=>{
+      const key = v.grupoId || v.id;
+      if(!grupos[key]) grupos[key] = [];
+      grupos[key].push(v);
+    });
+    let lista = Object.keys(grupos).map(key=>{
+      const items = grupos[key];
+      const first = items[0];
+      const total = items.reduce((s,v)=>s+Number(v.precioTotal),0);
+      return { key, items, cliente: first.cliente, fecha: first.fecha, total };
+    });
+    // stable chronological order for folio numbering (by id, which is time-based)
+    lista.sort((a,b)=> a.key.localeCompare(b.key));
+    lista.forEach((g,idx)=>{ g.folio = idx + 1; });
+    return lista;
+  }
+
+  function montoPagadoDeGrupo(grupo){
+    const pagosGrupo = state.pagos.filter(p=>p.grupoId === grupo.key);
+    let pagado = pagosGrupo.reduce((s,p)=>s+Number(p.monto),0);
+    // backward compatibility: old records marked pagado=true directly with no pagos entries
+    if(pagosGrupo.length === 0 && grupo.items.every(v=>v.pagado)){
+      pagado = grupo.total;
+    }
+    return Math.round(pagado * 100) / 100;
+  }
+
+  function entradasDeCaja(){
+    const grupos = agruparVentas();
+    const entradas = [];
+    state.pagos.forEach(p=>{
+      const grupo = grupos.find(g=>g.key===p.grupoId);
+      entradas.push({
+        fecha: p.fecha,
+        concepto: grupo ? `V${grupo.folio} - ${grupo.cliente}` : 'Venta',
+        monto: Number(p.monto)
+      });
+    });
+    // legacy: groups marked fully paid the old way, with no pagos records at all
+    grupos.forEach(g=>{
+      const tienePagos = state.pagos.some(p=>p.grupoId===g.key);
+      if(!tienePagos && g.items.every(v=>v.pagado)){
+        const fechaPago = g.items[0].fechaPago || g.fecha;
+        entradas.push({
+          fecha: fechaPago,
+          concepto: `V${g.folio} - ${g.cliente}`,
+          monto: g.total
+        });
+      }
+    });
+    return entradas;
+  }
+
+  function iniciales(nombre){
+    const p = String(nombre||'').trim().split(/\s+/).filter(Boolean);
+    if(p.length === 0) return '--';
+    return (p[0][0] + (p.length>1 ? p[1][0] : '')).toUpperCase();
+  }
+
+  function cerrarHoja(){
+    const sh = document.getElementById('ccSheet');
+    if(sh) sh.classList.remove('open');
+  }
+
+  function irA(tabId){
+    activeTab = tabId;
+    cerrarHoja();
+    render();
+    window.scrollTo(0,0);
+  }
+
+  function renderTabs(){
+    const bottomEl = document.getElementById('ccBottom');
+    const sheetList = document.getElementById('ccSheetList');
+    if(!sesion){ tabsEl.innerHTML = ''; bottomEl.innerHTML = ''; sheetList.innerHTML = ''; return; }
+    const tabsVisibles = TABS.filter(t => !t.soloAdmin || esAdmin());
+
+    // cuántas ventas tienen saldo pendiente (para la bolita naranja)
+    const pendientes = agruparVentas().filter(g => (g.total - montoPagadoDeGrupo(g)) > 0.005).length;
+
+    // menú lateral (computadora)
+    tabsEl.innerHTML = tabsVisibles.map((t,i) => `
+      <button type="button" class="cc-tab ${activeTab===t.id?'active':''}" data-tab="${t.id}">
+        <span class="n">${String(i+1).padStart(2,'0')}</span>${t.label}
+        ${t.id==='ventas' && pendientes>0 ? `<span class="cc-badge">${pendientes}</span>` : ''}
+      </button>
+    `).join('');
+    tabsEl.querySelectorAll('[data-tab]').forEach(el=>{
+      el.addEventListener('click', ()=> irA(el.dataset.tab));
+    });
+
+    // barra de abajo (celular)
+    const enMas = ['clientes','gastos','caja','utilidades','usuarios'].includes(activeTab);
+    bottomEl.innerHTML = `
+      <button type="button" class="cc-bt ${activeTab==='resumen'?'active':''}" data-bt="resumen">Inicio</button>
+      <button type="button" class="cc-bt ${activeTab==='ventas'?'active':''}" data-bt="ventas">Ventas</button>
+      ${puedeCapturar() ? `<button type="button" class="cc-bt-plus" id="btnNuevaVenta"><b>+</b>Venta</button>` : `<span></span>`}
+      <button type="button" class="cc-bt ${activeTab==='lotes'?'active':''}" data-bt="lotes">Lotes</button>
+      <button type="button" class="cc-bt ${enMas?'active':''}" id="btnMas">Más</button>
+    `;
+    bottomEl.querySelectorAll('[data-bt]').forEach(el=>{
+      el.addEventListener('click', ()=> irA(el.dataset.bt));
+    });
+    const btnNV = document.getElementById('btnNuevaVenta');
+    if(btnNV) btnNV.addEventListener('click', ()=>{ formularioVentaAbierto = true; irA('ventas'); });
+
+    // hoja "Más"
+    const extras = tabsVisibles.filter(t => ['clientes','gastos','caja','utilidades','usuarios'].includes(t.id));
+    sheetList.innerHTML = extras.map(t=>`<button type="button" class="cc-sheet-item" data-sheet="${t.id}">${t.label}</button>`).join('') +
+      `<button type="button" class="cc-sheet-item" id="sheetTema">${state.temaOscuro ? 'Modo claro' : 'Modo oscuro'}</button>` +
+      `<button type="button" class="cc-sheet-item salir" id="sheetSalir">Salir</button>`;
+    sheetList.querySelectorAll('[data-sheet]').forEach(el=>{
+      el.addEventListener('click', ()=> irA(el.dataset.sheet));
+    });
+    document.getElementById('sheetTema').addEventListener('click', ()=>{ cerrarHoja(); document.getElementById('temaToggleBtn').click(); });
+    document.getElementById('sheetSalir').addEventListener('click', ()=>{ cerrarHoja(); cerrarSesion(); });
+    const btnMas = document.getElementById('btnMas');
+    if(btnMas) btnMas.addEventListener('click', ()=> document.getElementById('ccSheet').classList.add('open'));
+  }
+
+  document.getElementById('ccSheet').addEventListener('click', (e)=>{
+    if(e.target.id === 'ccSheet') cerrarHoja();
+  });
+
+  function renderLogin(){
+    bodyEl.innerHTML = `
+      <div class="cc-card" style="max-width:360px; margin:40px auto; text-align:center;">
+        <img src="/apple-touch-icon.png" alt="Chile de Oro" style="width:84px; height:84px; border-radius:20px; margin-bottom:8px;" />
+        <div class="cc-title" style="font-size:28px; margin-bottom:4px;">Chile de Oro</div>
+        <div class="cc-sub" style="margin:0 0 18px;">Inicia sesión para entrar</div>
+        <div style="text-align:left;">
+        <div class="cc-field" style="margin-bottom:10px;">
+          <label>Usuario</label>
+          <input type="text" id="loginUsuario" placeholder="Tu usuario" />
+        </div>
+        <div class="cc-field" style="margin-bottom:10px;">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" />
+        </div>
+        ${errorLogin ? `<p style="color:#B5322C; font-size:13px; margin:0 0 10px;">${errorLogin}</p>` : ''}
+        <button class="cc-btn" type="button" id="loginBtn">Entrar</button>
+        </div>
+      </div>
+    `;
+    const intentar = async ()=>{
+      const usuario = document.getElementById('loginUsuario').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if(!usuario || !password){
+        errorLogin = 'Escribe tu usuario y contraseña.';
+        render();
+        return;
+      }
+      try{
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario, password })
+        });
+        const datos = await res.json();
+        if(!res.ok){
+          errorLogin = datos.error || 'No se pudo iniciar sesión.';
+          render();
+          return;
+        }
+        errorLogin = '';
+        guardarSesion(datos);
+        loaded = false;
+        render();
+        loadData();
+      }catch(e){
+        errorLogin = 'No se pudo conectar con el servidor.';
+        render();
+      }
+    };
+    document.getElementById('loginBtn').addEventListener('click', intentar);
+    document.getElementById('loginPassword').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') intentar();
+    });
+  }
+
+  function render(){
+    app.classList.toggle('nologin', !sesion);
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(sesion){
+      logoutBtn.onclick = cerrarSesion;
+      document.getElementById('ccUsuarioActual').textContent = sesion.nombre;
+      document.getElementById('ccRolActual').textContent = etiquetaRol(sesion.rol);
+      document.getElementById('ccAvatarSide').textContent = iniciales(sesion.nombre);
+      document.getElementById('ccAvatarTop').textContent = iniciales(sesion.nombre);
+    }
+    renderTabs();
+    if(!sesion){ renderLogin(); return; }
+    if(!loaded){ bodyEl.innerHTML = '<div class="cc-loading">Cargando datos...</div>'; return; }
+    if(activeTab === 'resumen') renderResumen();
+    else if(activeTab === 'lotes') renderLotes();
+    else if(activeTab === 'ventas') renderVentas();
+    else if(activeTab === 'clientes') renderClientes();
+    else if(activeTab === 'gastos') renderGastos();
+    else if(activeTab === 'caja') renderCaja();
+    else if(activeTab === 'utilidades') renderUtilidades();
+    else if(activeTab === 'usuarios'){ renderUsuarios(); if(listaUsuarios.length===0) cargarUsuarios(); }
+  }
+
+  // ---------- RESUMEN ----------
+  function deudasAntiguas(diasLimite){
+    diasLimite = diasLimite || 15;
+    const hoy = new Date(todayStr() + 'T00:00:00');
+    return agruparVentas().map(g=>{
+      const pagado = montoPagadoDeGrupo(g);
+      const pendiente = Math.round((g.total - pagado) * 100) / 100;
+      if(pendiente <= 0.005) return null;
+      const fechaVenta = new Date(g.fecha + 'T00:00:00');
+      const dias = Math.floor((hoy - fechaVenta) / (1000*60*60*24));
+      if(dias < diasLimite) return null;
+      return { cliente: g.cliente, folio: g.folio, dias, pendiente };
+    }).filter(Boolean).sort((a,b)=> b.dias - a.dias);
+  }
+
+  function renderResumen(){
+    const grupos = agruparVentas();
+    const totalPagado = entradasDeCaja().reduce((s,m)=>s+m.monto,0);
+    const totalGastos = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
+    const caja = state.saldoInicial + totalPagado - totalGastos;
+    const porCobrar = grupos.reduce((s,g)=> s + (g.total - montoPagadoDeGrupo(g)), 0);
+
+    const invPorTipo = {};
+    TIPOS.forEach(t=>invPorTipo[t.id]=0);
+    state.lotes.forEach(l=>{ invPorTipo[l.tipo] = (invPorTipo[l.tipo]||0) + disponibleDeLote(l); });
+
+    const vencidas = deudasAntiguas(15);
+
+    const totalVendido = state.ventas.reduce((s,v)=>s+Number(v.precioTotal),0);
+    const utilidadTotal = Math.round((totalVendido - totalGastos) * 100) / 100;
+    const clientesConDeuda = new Set(grupos.filter(g=>(g.total - montoPagadoDeGrupo(g)) > 0.005).map(g=>g.cliente)).size;
+    const movs = entradasDeCaja().filter(m=>m.fecha).sort((a,b)=> String(a.fecha).localeCompare(String(b.fecha)));
+    const ultimo = movs.length ? movs[movs.length-1] : null;
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const fechaCorta = (f)=>{ const p = String(f).split('-'); return p.length===3 ? `${Number(p[2])} ${MESES[Number(p[1])-1]}` : f; };
+    const hoyLargo = new Date().toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const hoyTexto = hoyLargo.charAt(0).toUpperCase() + hoyLargo.slice(1);
+    const primerNombre = sesion && sesion.nombre ? String(sesion.nombre).split(' ')[0] : '';
+    const grande = (n)=>{
+      const m = money(n); const i = m.lastIndexOf('.');
+      return m.slice(0,i) + '<span class="cc-cents">' + m.slice(i) + '</span>';
+    };
+    const COLOR_TIPO = { habanero:'#d9682a', serrano:'#5f8a3e', jalapeno:'#2f5e45', canasta:'#b8892b' };
+    const prodPorTipo = {};
+    TIPOS.forEach(t=>prodPorTipo[t.id]=0);
+    state.lotes.forEach(l=>{ prodPorTipo[l.tipo] = (prodPorTipo[l.tipo]||0) + Number(l.cantidad); });
+    const totalFrascos = TIPOS.reduce((s,t)=> s + Math.max(0, invPorTipo[t.id]||0), 0);
+    const totalVencido = vencidas.reduce((s,v)=>s+v.pendiente,0);
+
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Hola, ${primerNombre}</h2>
+          <div class="cc-sub">${hoyTexto}</div>
+        </div>
+        ${puedeCapturar() ? `
+        <div class="cc-actions">
+          <button class="cc-btn ghost small" type="button" id="irProduccionBtn">Registrar producción</button>
+          <button class="cc-btn small" type="button" id="irVentaBtn">+ Registrar venta</button>
+        </div>` : ''}
+      </div>
+
+      <div class="cc-dash">
+        <div class="cc-hero">
+          <div class="label">Dinero en caja</div>
+          <div class="big">${grande(caja)}</div>
+          <div class="small">${ultimo ? `+${money(ultimo.monto)} último cobro · ${fechaCorta(ultimo.fecha)}` : 'Sin movimientos todavía'}</div>
+        </div>
+        <div class="cc-pair">
+          <div class="cc-stat warn">
+            <div class="label">Por cobrar</div>
+            <div class="value">${grande(porCobrar)}</div>
+            <div class="cc-meta" style="margin-top:4px;">${clientesConDeuda} ${clientesConDeuda===1?'cliente':'clientes'}</div>
+          </div>
+          <div class="cc-stat">
+            <div class="label">Gastos</div>
+            <div class="value">${grande(totalGastos)}</div>
+            <div class="cc-meta" style="margin-top:4px;">Utilidad ${money(utilidadTotal)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-two">
+        <div class="cc-card">
+          <div class="cc-cardhead">
+            <div>
+              <h3>Cobros atrasados</h3>
+              <div class="sub">Más de 15 días sin pagar</div>
+            </div>
+            ${vencidas.length>0 ? `<span class="cc-chip">${money(totalVencido)}</span>` : ''}
+          </div>
+          ${vencidas.length===0 ? `<div class="cc-empty">Nadie debe de más de 15 días 🎉</div>` : vencidas.map((v,i)=>`
+            <div class="cc-debt">
+              <div class="av">${iniciales(v.cliente)}</div>
+              <div style="min-width:0;">
+                <div class="nm">${v.cliente}</div>
+                <div class="dt">V${v.folio} · <span style="color:${v.dias>60?'#a8291f':'#b8641f'}; font-weight:600;">${v.dias} días</span></div>
+              </div>
+              <div class="amt">${money(v.pendiente)}
+                <button type="button" class="cc-recordar" data-recordar="${i}">Recordar</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="cc-card">
+          <div class="cc-cardhead">
+            <h3>Inventario</h3>
+            <span class="cc-meta">${totalFrascos} frascos</span>
+          </div>
+          <div class="cc-inv">
+            ${TIPOS.map(t=>{
+              const disp = invPorTipo[t.id] || 0;
+              const prod = prodPorTipo[t.id] || 0;
+              const pct = prod > 0 ? Math.max(0, Math.min(100, Math.round(disp/prod*100))) : 0;
+              return `
+              <div class="row">
+                <span class="cc-dot" style="background:${COLOR_TIPO[t.id]||'#999'}"></span>${t.label}
+                ${disp>0 ? `<b>${disp} frascos</b>` : `<b class="cc-agotado">Agotado</b>`}
+              </div>
+              <div class="cc-bar"><i style="width:${pct}%; background:${COLOR_TIPO[t.id]||'#999'}"></i></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-backup">
+        <div>
+          <div class="t">Respaldo de datos</div>
+          <div class="d">Copia de todo por si algo falla.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          ${esAdmin() ? `<button class="cc-btn ghost small" type="button" id="restaurarRespaldoBtn">Restaurar</button>` : ''}
+          <button class="cc-btn small" type="button" id="descargarRespaldoBtn" style="background:#241b16; border-color:#241b16;">Descargar</button>
+          <input type="file" id="restaurarRespaldoInput" accept="application/json" style="display:none;" />
+        </div>
+      </div>
+    `;
+
+    const irProd = document.getElementById('irProduccionBtn');
+    if(irProd) irProd.addEventListener('click', ()=>{ formularioLoteAbierto = true; irA('lotes'); });
+    const irVen = document.getElementById('irVentaBtn');
+    if(irVen) irVen.addEventListener('click', ()=>{ formularioVentaAbierto = true; irA('ventas'); });
+    bodyEl.querySelectorAll('[data-recordar]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const v = vencidas[Number(btn.dataset.recordar)];
+        if(!v) return;
+        const msg = `Hola ${v.cliente}, te escribo de *Chile de Oro* 🌶️. Te recuerdo que tienes un saldo pendiente de ${money(v.pendiente)} de la venta V${v.folio} (${v.dias} días). ¡Gracias!`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+      });
+    });
+
+    document.getElementById('descargarRespaldoBtn').addEventListener('click', ()=>{
+      const datos = JSON.stringify(state, null, 2);
+      const blob = new Blob([datos], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo-chicharron-${todayStr()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    const restaurarInput = document.getElementById('restaurarRespaldoInput');
+    const restaurarBtn = document.getElementById('restaurarRespaldoBtn');
+    if(restaurarBtn){
+      restaurarBtn.addEventListener('click', (e)=>{
+        armarConfirmacion(e.currentTarget, 'Esto reemplaza todo, clic de nuevo', ()=>{
+          restaurarInput.click();
+        });
+      });
+    }
+    restaurarInput.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        try{
+          const datos = JSON.parse(ev.target.result);
+          state.lotes = datos.lotes || [];
+          state.ventas = datos.ventas || [];
+          state.gastos = datos.gastos || [];
+          state.pagos = datos.pagos || [];
+          state.clientes = datos.clientes || [];
+          state.ultimosPrecios = datos.ultimosPrecios || {};
+          render();
+          saveData();
+          alert('Respaldo restaurado correctamente.');
+        }catch(err){
+          alert('Ese archivo no parece ser un respaldo válido.');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // ---------- LOTES ----------
+  function renderLotes(){
+    const gruposAll = agruparLotes();
+    const abiertosN = gruposAll.filter(g=>!state.lotesCerrados.includes(g.key)).length;
+    const dispTotal = state.lotes.reduce((t,l)=> t + Math.max(0, disponibleDeLote(l)), 0);
+    const vistaLote = loteEstadoFilter==='abiertos' ? 'abiertos' : loteEstadoFilter==='cerrados' ? 'cerrados' : loteFilter==='existencia' ? 'existencia' : 'todos';
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Lotes</h2>
+          <div class="cc-sub">${gruposAll.length} ${gruposAll.length===1?'lote':'lotes'} · ${abiertosN} ${abiertosN===1?'abierto':'abiertos'} · ${dispTotal} frascos disponibles</div>
+        </div>
+        ${puedeCapturar() ? `<div class="cc-actions"><button class="cc-btn small" type="button" data-toggle-form-lote="1">+ Registrar producción</button></div>` : ''}
+      </div>
+
+      ${puedeCapturar() && formularioLoteAbierto ? `
+      <div class="cc-panel-bg" data-toggle-form-lote="1"></div>
+      <aside class="cc-panel">
+        <div class="cc-panel-head">
+          <h3>Registrar producción</h3>
+          <button class="cc-x" type="button" data-toggle-form-lote="1" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="cc-panel-body">
+          <form id="loteForm" onsubmit="return false;">
+            <div class="cc-field" style="margin-bottom:6px;">
+              <label>Fecha</label>
+              <input type="date" id="loteFecha" name="fecha" value="${todayStr()}" required />
+            </div>
+            <div class="cc-label">¿Cuánto hiciste?</div>
+            ${TIPOS.map(t=>`
+              <div class="cc-tcard">
+                <div class="cc-trow">
+                  <div class="cc-tname"><span class="cc-dot" style="background:${COLOR_TIPO[t.id]||'#999'}"></span>${t.label}</div>
+                  ${stepperHtml('loteCantidad_'+t.id)}
+                </div>
+                <input type="text" class="cc-note" id="loteNota_${t.id}" placeholder="Nota (ej. 3kg chile, 1kg sal...)" />
+              </div>
+            `).join('')}
+            <div class="cc-field" style="margin-top:6px;">
+              <label>Unidad</label>
+              <input type="text" id="loteUnidad" name="unidad" placeholder="Frascos" value="Frascos" />
+            </div>
+          </form>
+        </div>
+        <div class="cc-panel-foot">
+          <button class="cc-btn" type="button" id="loteSubmitBtn">Guardar producción del día</button>
+        </div>
+      </aside>
+      ` : ''}
+
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${vistaLote==='todos'?'active':''}" data-lote-vista="todos">Todos</div>
+        <div class="cc-filter-btn ${vistaLote==='abiertos'?'active':''}" data-lote-vista="abiertos">Abiertos</div>
+        <div class="cc-filter-btn ${vistaLote==='cerrados'?'active':''}" data-lote-vista="cerrados">Cerrados</div>
+        <div class="cc-filter-btn ${vistaLote==='existencia'?'active':''}" data-lote-vista="existencia">Con existencia</div>
+      </div>
+
+      <div id="lotesList">
+        ${(()=>{
+          let listaGrupos = agruparLotes()
+            .slice()
+            .sort((a,b)=> b.items[0].fecha.localeCompare(a.items[0].fecha) || b.folio - a.folio);
+
+          if(loteFilter === 'existencia'){
+            listaGrupos = listaGrupos.filter(g=> g.items.some(l=>disponibleDeLote(l) > 0));
+          } else if(loteFilter === 'agotados'){
+            listaGrupos = listaGrupos.filter(g=> g.items.every(l=>disponibleDeLote(l) <= 0));
+          }
+
+          if(loteEstadoFilter === 'abiertos'){
+            listaGrupos = listaGrupos.filter(g=> !state.lotesCerrados.includes(g.key));
+          } else if(loteEstadoFilter === 'cerrados'){
+            listaGrupos = listaGrupos.filter(g=> state.lotesCerrados.includes(g.key));
+          }
+
+          if(listaGrupos.length === 0) return '<div class="cc-empty">No hay lotes en esta categoría.</div>';
+
+          return listaGrupos.map(g=>{
+            const items = g.items;
+            const fecha = items[0].fecha;
+            const itemsHtml = items.map(l=>{
+              const disp = disponibleDeLote(l);
+              const info = tipoInfo(l.tipo);
+              if(editandoLote === l.id){
+                const vendido = vendidoDeLote(l.id);
+                return `
+                  <div class="cc-vitem" style="align-items:center; flex-wrap:wrap;">
+                    <span><span class="cc-tipo-tag ${info.cls}">${info.label}</span></span>
+                    <span style="width:100%; display:flex; gap:8px; margin-top:4px;">
+                      <input type="number" id="editLoteCantidad_${l.id}" min="${vendido}" step="1" value="${l.cantidad}" style="width:80px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
+                      <input type="text" id="editLoteUnidad_${l.id}" value="${l.unidad||''}" style="width:90px; padding:6px 8px; border:1px solid var(--line); border-radius:7px;" />
+                    </span>
+                    <input type="text" id="editLoteNota_${l.id}" value="${l.nota||''}" placeholder="Nota (ej. 3kg chile, 1kg sal...)" style="width:100%; margin-top:6px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:13px;" />
+                    <span style="width:100%; display:flex; gap:8px; margin-top:6px;">
+                      <button class="cc-btn small" data-guardar-lote="${l.id}">Guardar</button>
+                      <button class="cc-btn small ghost" data-cancelar-edit-lote="${l.id}">Cancelar</button>
+                    </span>
+                  </div>
+                `;
+              }
+              const prod = Number(l.cantidad) || 0;
+              const pct = prod > 0 ? Math.max(0, Math.min(100, Math.round(disp/prod*100))) : 0;
+              const col = COLOR_TIPO[l.tipo] || '#999';
+              return `
+                <div class="cc-lrow">
+                  <div class="cc-lrow-main">
+                    <div class="cc-lrow-name"><span class="cc-dot" style="background:${col}"></span><b>${info.label}</b></div>
+                    <div class="cc-lrow-bar">
+                      <div class="cc-bar"><i style="width:${pct}%; background:${col}"></i></div>
+                      <span class="cc-lrow-num"><b style="${disp<=0?'color:#a8291f':''}">${disp}</b> de ${prod} ${(l.unidad||'').toLowerCase()}</span>
+                    </div>
+                  </div>
+                  ${l.nota ? `<div class="cc-meta" style="margin-top:4px;">📝 ${l.nota}</div>` : ''}
+                  ${esAdmin() ? `<div class="cc-lrow-act"><button class="cc-del" data-editar-lote="${l.id}">Editar</button><button class="cc-del" data-del-lote="${l.id}">Eliminar</button></div>` : ''}
+                </div>
+              `;
+            }).join('');
+            const vendidoGrupo = vendidoDelGrupoLote(g);
+            const gastosGrupo = gastosDelGrupoLote(g.key);
+            const utilidadGrupo = Math.round((vendidoGrupo - gastosGrupo) * 100) / 100;
+            const cerrado = state.lotesCerrados.includes(g.key);
+
+            const tiposYaEnGrupo = items.map(l=>l.tipo);
+            const tiposFaltantes = TIPOS.filter(t=>!tiposYaEnGrupo.includes(t.id));
+            let agregarTipoHtml = '';
+            if(puedeCapturar() && !cerrado && tiposFaltantes.length > 0){
+              if(agregandoTipoALote === g.key){
+                agregarTipoHtml = `
+                  <div class="cc-venta-row" style="margin-top:8px; flex-wrap:wrap;">
+                    <select id="nuevoTipoLote_${g.key}" style="flex:1 1 100px;">
+                      ${tiposFaltantes.map(t=>`<option value="${t.id}">${t.label}</option>`).join('')}
+                    </select>
+                    <input type="number" id="nuevoTipoCantidad_${g.key}" min="1" step="1" placeholder="Cantidad" style="width:90px;" />
+                    <input type="text" id="nuevoTipoNota_${g.key}" placeholder="Nota (opcional)" style="width:100%; margin-top:6px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-family:inherit; font-size:13px;" />
+                    <div style="display:flex; gap:8px; margin-top:6px; width:100%;">
+                      <button class="cc-btn small" data-guardar-nuevo-tipo="${g.key}">Guardar</button>
+                      <button class="cc-btn small ghost" data-cancelar-nuevo-tipo="${g.key}">Cancelar</button>
+                    </div>
+                  </div>
+                `;
+              } else {
+                agregarTipoHtml = `<button class="cc-del" data-abrir-nuevo-tipo="${g.key}" style="margin-top:8px;">+ Agregar Otro Tipo</button>`;
+              }
+            }
+
+            return `
+              <article class="cc-lcard" style="${cerrado ? 'opacity:0.85;' : ''}">
+                <div class="cc-lhead">
+                  <div class="cc-lnum">L${g.folio}</div>
+                  <div style="flex:1; min-width:0;">
+                    <div class="cc-lline"><b>${fechaBonita(fecha)}</b> <span class="cc-pill ${cerrado?'neutral':'pagado'}">${cerrado?'Cerrado':'Abierto'}</span></div>
+                    ${items[0].creadoPor ? `<div class="cc-meta">Por ${items[0].creadoPor}</div>` : ''}
+                  </div>
+                  ${puedeCapturar() ? `<button class="cc-btn ghost small" type="button" data-toggle-cerrar-lote="${g.key}">${cerrado ? 'Reabrir' : 'Cerrar lote'}</button>` : ''}
+                </div>
+                <div class="cc-litems">
+                  ${itemsHtml}
+                  ${agregarTipoHtml ? `<div style="padding:8px 16px 12px;">${agregarTipoHtml}</div>` : ''}
+                </div>
+                <div class="cc-lfoot">
+                  <div><span>Vendido</span><b>${money(vendidoGrupo)}</b></div>
+                  <div><span>Gastos</span><b>${money(gastosGrupo)}</b></div>
+                  <div class="util ${utilidadGrupo<0?'neg':''}"><span>Utilidad</span><b>${money(utilidadGrupo)}</b></div>
+                </div>
+              </article>
+            `;
+          }).join('');
+        })()}
+      </div>
+    `;
+
+    activarSteppers(bodyEl);
+    bodyEl.querySelectorAll('[data-lote-vista]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const v = btn.dataset.loteVista;
+        loteFilter = v === 'existencia' ? 'existencia' : 'todas';
+        loteEstadoFilter = (v === 'abiertos' || v === 'cerrados') ? v : 'todas';
+        render();
+      });
+    });
+    bodyEl.querySelectorAll('[data-lote-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ loteFilter = btn.dataset.loteFilter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-lote-estado-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ loteEstadoFilter = btn.dataset.loteEstadoFilter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-abrir-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        agregandoTipoALote = btn.dataset.abrirNuevoTipo;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        agregandoTipoALote = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-nuevo-tipo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const grupoKey = btn.dataset.guardarNuevoTipo;
+        const grupo = agruparLotes().find(g=>g.key===grupoKey);
+        if(!grupo) return;
+        const tipoSelect = document.getElementById(`nuevoTipoLote_${grupoKey}`);
+        const cantidadInput = document.getElementById(`nuevoTipoCantidad_${grupoKey}`);
+        const notaInput = document.getElementById(`nuevoTipoNota_${grupoKey}`);
+        const tipo = tipoSelect.value;
+        const cantidad = Number(cantidadInput.value) || 0;
+        const nota = notaInput ? notaInput.value.trim() : '';
+        if(cantidad <= 0){
+          alert('Escribe una cantidad mayor a 0.');
+          return;
+        }
+        const fecha = grupo.items[0].fecha;
+        const unidad = grupo.items[0].unidad || 'Frascos';
+        state.lotes.push({
+          id: uid(),
+          grupoId: grupoKey,
+          tipo,
+          fecha,
+          cantidad,
+          unidad,
+          nota,
+          creadoPor: sesion.nombre
+        });
+        agregandoTipoALote = null;
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-form-lote]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        formularioLoteAbierto = !formularioLoteAbierto;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-cerrar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.toggleCerrarLote;
+        if(state.lotesCerrados.includes(key)){
+          state.lotesCerrados = state.lotesCerrados.filter(k=>k!==key);
+        } else {
+          state.lotesCerrados.push(key);
+        }
+        render();
+        saveData();
+      });
+    });
+
+    const loteSubmitBtn = document.getElementById('loteSubmitBtn');
+    if(loteSubmitBtn) loteSubmitBtn.addEventListener('click', ()=>{
+      const fecha = document.getElementById('loteFecha').value;
+      const unidad = document.getElementById('loteUnidad').value || 'Frascos';
+      const grupoId = uid();
+      const nuevos = [];
+      TIPOS.forEach(t=>{
+        const input = document.getElementById(`loteCantidad_${t.id}`);
+        const cantidad = Number(input.value) || 0;
+        if(cantidad > 0){
+          const notaInput = document.getElementById(`loteNota_${t.id}`);
+          const nota = notaInput ? notaInput.value.trim() : '';
+          nuevos.push({
+            id: uid(),
+            grupoId,
+            tipo: t.id,
+            fecha,
+            cantidad,
+            unidad,
+            nota,
+            creadoPor: sesion.nombre
+          });
+        }
+      });
+      if(!fecha){
+        alert('Elige una fecha.');
+        return;
+      }
+      if(nuevos.length === 0){
+        alert('Escribe al menos una cantidad mayor a 0 en alguno de los tipos.');
+        return;
+      }
+      state.lotes.push(...nuevos);
+      formularioLoteAbierto = false;
+      render();
+      saveData();
+    });
+
+    bodyEl.querySelectorAll('[data-del-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.delLote;
+        if(vendidoDeLote(id) > 0){
+          alert('No se puede eliminar: este lote ya tiene ventas registradas.');
+          return;
+        }
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          state.lotes = state.lotes.filter(l=>l.id!==id);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoLote = btn.dataset.editarLote;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoLote = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-lote]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarLote;
+        const lote = state.lotes.find(l=>l.id===id);
+        if(!lote) return;
+        const cantidad = Number(document.getElementById(`editLoteCantidad_${id}`).value);
+        const unidad = document.getElementById(`editLoteUnidad_${id}`).value || 'Frascos';
+        const notaInput = document.getElementById(`editLoteNota_${id}`);
+        const nota = notaInput ? notaInput.value.trim() : lote.nota;
+        const vendido = vendidoDeLote(id);
+        if(!cantidad || cantidad < vendido){
+          alert(`La cantidad no puede ser menor a lo ya vendido (${vendido}).`);
+          return;
+        }
+        lote.cantidad = cantidad;
+        lote.unidad = unidad;
+        lote.nota = nota;
+        editandoLote = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- VENTAS ----------
+  function renderVentas(){
+    const lotesPorTipo = {};
+    TIPOS.forEach(t=>{
+      lotesPorTipo[t.id] = state.lotes
+        .filter(l=>l.tipo===t.id && disponibleDeLote(l) > 0)
+        .sort((a,b)=> a.fecha.localeCompare(b.fecha));
+    });
+
+    const gruposV = agruparVentas();
+    const porCobrarV = gruposV.reduce((t,g)=> t + Math.max(0, g.total - montoPagadoDeGrupo(g)), 0);
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Ventas</h2>
+          <div class="cc-sub">${gruposV.length} ${gruposV.length===1?'venta':'ventas'} · ${money(porCobrarV)} por cobrar</div>
+        </div>
+        ${puedeCapturar() ? `<div class="cc-actions"><button class="cc-btn small" type="button" data-toggle-form-venta="1">+ Registrar venta</button></div>` : ''}
+      </div>
+
+      ${puedeCapturar() && formularioVentaAbierto ? `
+      <div class="cc-panel-bg" data-toggle-form-venta="1"></div>
+      <aside class="cc-panel">
+        <div class="cc-panel-head">
+          <h3>Registrar venta</h3>
+          <button class="cc-x" type="button" data-toggle-form-venta="1" aria-label="Cerrar">✕</button>
+        </div>
+        ${state.lotes.length===0 ? `
+        <div class="cc-panel-body"><div class="cc-empty">Primero registra un lote en la pestaña Lotes.</div></div>
+        ` : `
+        <div class="cc-panel-body">
+          <form id="ventaForm" onsubmit="return false;">
+            <div class="cc-form-row">
+              <div class="cc-field">
+                <label>Cliente</label>
+                <select id="ventaClienteSelect">
+                  <option value="__nuevo__">+ Nuevo Cliente...</option>
+                  ${listaClientes().map(c=>`<option value="${c}">${c}</option>`).join('')}
+                </select>
+                <input type="text" id="ventaClienteNuevo" placeholder="Nombre del nuevo cliente" style="margin-top:6px;" />
+              </div>
+              <div class="cc-field">
+                <label>Fecha</label>
+                <input type="date" id="ventaFecha" name="fecha" value="${todayStr()}" required />
+              </div>
+            </div>
+
+            <div class="cc-label">¿Cuánto le vendiste?</div>
+            ${TIPOS.map(t=>{
+              const disponibles = lotesPorTipo[t.id];
+              const totalDisponible = disponibles.reduce((s,l)=>s+disponibleDeLote(l), 0);
+              const col = COLOR_TIPO[t.id] || '#999';
+              if(disponibles.length === 0){
+                return `
+                  <div class="cc-tcard" style="opacity:0.55;">
+                    <div class="cc-trow">
+                      <div class="cc-tname"><span class="cc-dot" style="background:${col}"></span>${t.label}</div>
+                      <span class="cc-tsub">Sin inventario</span>
+                    </div>
+                  </div>`;
+              }
+              const unidad = (disponibles[0].unidad || '').toLowerCase();
+              return `
+                <div class="cc-tcard">
+                  <div class="cc-trow" style="margin-bottom:6px;">
+                    <div class="cc-tname"><span class="cc-dot" style="background:${col}"></span>${t.label}</div>
+                    <span class="cc-tsub">${totalDisponible} ${unidad} disponibles</span>
+                  </div>
+                  ${disponibles.map(l=>{
+                    const disp = disponibleDeLote(l);
+                    return `
+                    <div class="cc-trow" style="padding:6px 0;">
+                      <span class="cc-tsub">L${folioDeLote(l.id)} · ${fechaBonita(l.fecha)} · ${disp} disp.</span>
+                      ${stepperHtml('ventaCantidad_'+l.id, disp)}
+                    </div>`;
+                  }).join('')}
+                  <div class="cc-price">
+                    <span>Precio por unidad</span>
+                    <input type="number" id="ventaPrecio_${t.id}" min="0" step="0.01" placeholder="$" inputmode="decimal" value="${state.ultimosPrecios[t.id] != null ? state.ultimosPrecios[t.id] : ''}" title="Precio por unidad (usa 0 si es autoconsumo)" />
+                  </div>
+                </div>`;
+            }).join('')}
+
+            <div class="cc-label">¿Cómo pagó?</div>
+            <div class="cc-seg3">
+              <button type="button" data-pagomodo="todo">Pagó todo</button>
+              <button type="button" data-pagomodo="abono">Abonó</button>
+              <button type="button" data-pagomodo="credito" class="active">A crédito</button>
+            </div>
+            <input type="hidden" id="ventaPagoModo" value="credito" />
+            <div id="ventaAbonoWrap" style="display:none;">
+              <div class="cc-field">
+                <label>¿Cuánto abonó?</label>
+                <input type="number" id="ventaAbonoMonto" min="0" step="0.01" placeholder="$" inputmode="decimal" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="cc-panel-foot">
+          <div class="cc-foot-total">
+            <span class="lbl">Total <span id="ventaFrascosPreview">(0 Frascos)</span></span>
+            <strong id="ventaTotalPreview">$0.00</strong>
+          </div>
+          <button class="cc-btn" type="button" id="ventaSubmitBtn">Guardar venta</button>
+        </div>
+        `}
+      </aside>
+      ` : ''}
+
+      <div class="cc-venta-row" style="margin:0 0 10px;">
+        <input type="text" class="cc-searchbox" id="ventaBuscar" placeholder="Buscar por cliente..." value="${ventaBusqueda}" />
+      </div>
+
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${ventaFilter==='todas'?'active':''}" data-filter="todas">Todas</div>
+        <div class="cc-filter-btn ${ventaFilter==='pendientes'?'active':''}" data-filter="pendientes">Pendientes</div>
+        <div class="cc-filter-btn ${ventaFilter==='pagadas'?'active':''}" data-filter="pagadas">Pagadas</div>
+      </div>
+
+      <div id="ventasList">
+        ${(()=>{
+          let listaGrupos = agruparVentas().map(g=>({
+            ...g,
+            pagadoMonto: montoPagadoDeGrupo(g)
+          })).sort((a,b)=> b.fecha.localeCompare(a.fecha) || b.folio - a.folio);
+
+          if(ventaBusqueda.trim()){
+            const q = ventaBusqueda.trim().toLowerCase();
+            listaGrupos = listaGrupos.filter(g=>g.cliente.toLowerCase().includes(q));
+          }
+          if(ventaFilter === 'pagadas') listaGrupos = listaGrupos.filter(g=>g.pagadoMonto >= g.total - 0.005);
+          if(ventaFilter === 'pendientes') listaGrupos = listaGrupos.filter(g=>g.pagadoMonto < g.total - 0.005);
+
+          if(listaGrupos.length === 0) return '<div class="cc-empty">No hay ventas en esta categoría.</div>';
+
+          return listaGrupos.map(g=>{
+            const porTipo = {};
+            g.items.forEach(v=>{
+              const lote = state.lotes.find(l=>l.id===v.loteId);
+              const tipoId = lote ? lote.tipo : '—';
+              if(!porTipo[tipoId]) porTipo[tipoId] = { cantidad:0, precioTotal:0, precioUnitario:v.precioUnitario };
+              porTipo[tipoId].cantidad += Number(v.cantidad);
+              porTipo[tipoId].precioTotal += Number(v.precioTotal);
+            });
+            const itemsHtml = Object.keys(porTipo).map(tipoId=>{
+              const info = tipoId !== '—' ? tipoInfo(tipoId) : null;
+              const it = porTipo[tipoId];
+              return `<div class="cc-vitem"><span>${info?info.label:'—'} · ${it.cantidad} × ${money(it.precioUnitario)}</span><span>${money(it.precioTotal)}</span></div>`;
+            }).join('');
+            const totalFrascos = g.items.reduce((s,v)=>s+Number(v.cantidad),0);
+            const saldo = Math.round((g.total - g.pagadoMonto) * 100) / 100;
+            const estaPagado = saldo <= 0.005;
+            const estado = estaPagado ? 'Pagado' : (g.pagadoMonto > 0 ? 'Abono parcial' : 'Pendiente');
+
+            if(editandoVentaItem === g.key){
+              const itemsEditHtml = g.items.map(v=>{
+                const lote = state.lotes.find(l=>l.id===v.loteId);
+                const info = lote ? tipoInfo(lote.tipo) : null;
+                // lotes del mismo tipo, para poder reasignar si se equivocó de lote
+                const lotesMismoTipo = lote ? state.lotes.filter(l=>l.tipo===lote.tipo) : [];
+                return `
+                  <div class="cc-venta-row" style="flex-wrap:wrap;">
+                    <span class="cc-tipo-tag ${info?info.cls:''}">${info?info.label:'—'}</span>
+                    <select id="editVentaLote_${v.id}" style="flex:1 1 140px;">
+                      ${lotesMismoTipo.map(l=>{
+                        const dispPropio = disponibleDeLote(l) + (l.id===v.loteId ? Number(v.cantidad) : 0);
+                        return `<option value="${l.id}" ${l.id===v.loteId?'selected':''}>L${folioDeLote(l.id)} (${l.fecha}) · máx ${dispPropio}</option>`;
+                      }).join('')}
+                    </select>
+                    <input type="number" id="editVentaCantidad_${v.id}" min="0" step="1" value="${v.cantidad}" style="width:70px;" title="Cantidad" />
+                    <input type="number" id="editVentaPrecio_${v.id}" min="0" step="0.01" value="${v.precioUnitario}" style="width:80px;" title="Precio por unidad" />
+                  </div>
+                `;
+              }).join('');
+              return `
+                <div class="cc-vgroup">
+                  <div class="top">
+                    <div>
+                      <div class="cliente">V${g.folio} · ${g.cliente}</div>
+                      <div class="cc-meta">${g.fecha}</div>
+                    </div>
+                  </div>
+                  ${itemsEditHtml}
+                  <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="cc-btn small" data-guardar-venta="${g.key}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-venta="${g.key}">Cancelar</button>
+                  </div>
+                </div>
+              `;
+            }
+
+            const pagosGrupo = state.pagos.filter(p=>p.grupoId===g.key).sort((a,b)=> a.fecha.localeCompare(b.fecha));
+            const pagosHtml = pagosGrupo.map(p=>{
+              if(editandoPago === p.id){
+                return `
+                  <div class="cc-venta-row" style="margin-top:6px;">
+                    <input type="number" id="editPagoMonto_${p.id}" min="0" step="0.01" value="${p.monto}" style="width:100px;" />
+                    <input type="date" id="editPagoFecha_${p.id}" value="${p.fecha}" style="width:130px;" />
+                    <button class="cc-btn small" data-guardar-pago="${p.id}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-pago="${p.id}">Cancelar</button>
+                  </div>
+                `;
+              }
+              return `
+                <div class="cc-vitem" style="align-items:center;">
+                  <span>Pago del ${p.fecha}${p.creadoPor ? ` (${p.creadoPor})` : ''}</span>
+                  <span>${money(p.monto)}</span>
+                  ${esAdmin() ? `
+                  <span>
+                    <button class="cc-del" data-editar-pago="${p.id}">Editar</button>
+                    <button class="cc-del" data-del-pago="${p.id}">Eliminar</button>
+                  </span>
+                  ` : '<span></span>'}
+                </div>
+              `;
+            }).join('');
+
+            return `
+              <div class="cc-vgroup">
+                <div class="top">
+                  <div>
+                    <div class="cliente">V${g.folio} · ${g.cliente}</div>
+                    <div class="cc-meta">${g.fecha}${g.items[0].creadoPor ? ` · Registrado por ${g.items[0].creadoPor}` : ''}</div>
+                  </div>
+                  <span class="cc-pill ${estaPagado?'pagado':'pendiente'}">${estado}</span>
+                </div>
+                <div class="items">${itemsHtml}</div>
+                <div class="total-row">
+                  <span>Total (${totalFrascos} Frascos)</span>
+                  <span>${money(g.total)}</span>
+                </div>
+                ${g.pagadoMonto > 0 && !estaPagado ? `<div class="cc-row-detail" style="margin-top:4px;"><span>Abonado</span><strong style="color:#5C7A4A">${money(g.pagadoMonto)}</strong></div>` : ''}
+                ${pagosGrupo.length > 0 ? `<div style="margin-top:6px;">${pagosHtml}</div>` : ''}
+                ${!estaPagado ? `
+                  <div class="cc-row-detail" style="margin-top:2px;"><span>Saldo pendiente</span><strong style="color:#B5322C">${money(saldo)}</strong></div>
+                  ${puedeCapturar() ? `
+                  <div class="cc-venta-row" style="margin-top:8px;">
+                    <input type="number" id="pagoMonto_${g.key}" min="0" step="0.01" placeholder="Monto a pagar" style="width:110px;" />
+                    <input type="date" id="pagoFecha_${g.key}" value="${todayStr()}" style="width:130px;" />
+                    <button class="cc-btn small" data-pago-abono="${g.key}">Registrar pago</button>
+                    <button class="cc-btn small ghost" data-pago-completo="${g.key}" data-saldo="${saldo}">Pago completo</button>
+                  </div>
+                  ` : ''}
+                ` : ''}
+                <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                  <button class="cc-btn small" style="background:#25D366;" data-whatsapp-venta="${g.key}">📱 Enviar por WhatsApp</button>
+                  ${esAdmin() ? `<button class="cc-del" data-editar-venta="${g.key}">Editar</button>` : ''}
+                  ${esAdmin() ? `<button class="cc-del" data-del-grupo="${g.key}">Eliminar</button>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+        })()}
+      </div>
+    `;
+
+    activarSteppers(bodyEl);
+    bodyEl.querySelectorAll('[data-pagomodo]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const modo = b.dataset.pagomodo;
+        document.getElementById('ventaPagoModo').value = modo;
+        bodyEl.querySelectorAll('[data-pagomodo]').forEach(x=>x.classList.toggle('active', x===b));
+        document.getElementById('ventaAbonoWrap').style.display = modo === 'abono' ? 'block' : 'none';
+      });
+    });
+
+    const submitBtn = document.getElementById('ventaSubmitBtn');
+    if(submitBtn){
+      const clienteSelectEl = document.getElementById('ventaClienteSelect');
+      const clienteNuevoEl = document.getElementById('ventaClienteNuevo');
+      if(clienteSelectEl && clienteNuevoEl){
+        clienteSelectEl.addEventListener('change', ()=>{
+          if(clienteSelectEl.value === '__nuevo__'){
+            clienteNuevoEl.style.display = 'block';
+            clienteNuevoEl.focus();
+          } else {
+            clienteNuevoEl.style.display = 'none';
+          }
+        });
+      }
+
+      const totalPreview = document.getElementById('ventaTotalPreview');
+      const frascosPreview = document.getElementById('ventaFrascosPreview');
+      const updatePreview = ()=>{
+        let total = 0;
+        let frascos = 0;
+        TIPOS.forEach(t=>{
+          const pInput = document.getElementById(`ventaPrecio_${t.id}`);
+          const precio = pInput ? (Number(pInput.value)||0) : 0;
+          const disponibles = lotesPorTipo[t.id] || [];
+          disponibles.forEach(l=>{
+            const cInput = document.getElementById(`ventaCantidad_${l.id}`);
+            if(cInput){
+              const c = Number(cInput.value)||0;
+              total += c * precio;
+              frascos += c;
+            }
+          });
+        });
+        totalPreview.textContent = money(total);
+        frascosPreview.textContent = `(${frascos} Frascos)`;
+      };
+      TIPOS.forEach(t=>{
+        const pInput = document.getElementById(`ventaPrecio_${t.id}`);
+        const disponibles = lotesPorTipo[t.id] || [];
+        if(pInput) pInput.addEventListener('input', updatePreview);
+        disponibles.forEach(l=>{
+          const cInput = document.getElementById(`ventaCantidad_${l.id}`);
+          if(cInput) cInput.addEventListener('input', updatePreview);
+        });
+      });
+
+      submitBtn.addEventListener('click', ()=>{
+        const clienteSelect = document.getElementById('ventaClienteSelect');
+        const clienteNuevoInput = document.getElementById('ventaClienteNuevo');
+        const cliente = clienteSelect.value === '__nuevo__' ? clienteNuevoInput.value.trim() : clienteSelect.value;
+        const fecha = document.getElementById('ventaFecha').value;
+        if(!cliente || !fecha){
+          alert('Llena cliente y fecha.');
+          return;
+        }
+        const pagoModo = document.getElementById('ventaPagoModo').value;
+        const pagado = pagoModo === 'todo';
+        const abonoInicial = pagoModo === 'abono' ? (Number(document.getElementById('ventaAbonoMonto').value) || 0) : 0;
+        const grupoId = uid();
+        const nuevas = [];
+        for(const t of TIPOS){
+          const precioInput = document.getElementById(`ventaPrecio_${t.id}`);
+          if(!precioInput) continue;
+          const precioUnitario = precioInput.value === '' ? 0 : Number(precioInput.value) || 0;
+          const disponibles = lotesPorTipo[t.id] || [];
+          let algunaCantidad = false;
+          for(const lote of disponibles){
+            const cInput = document.getElementById(`ventaCantidad_${lote.id}`);
+            if(!cInput) continue;
+            const cantidad = Number(cInput.value) || 0;
+            if(cantidad <= 0) continue;
+            algunaCantidad = true;
+            const disp = disponibleDeLote(lote);
+            if(cantidad > disp){
+              alert(`No hay suficiente inventario de ${tipoInfo(t.id).label} en L${folioDeLote(lote.id)}. Disponible: ${disp}`);
+              return;
+            }
+            nuevas.push({
+              id: uid(),
+              grupoId,
+              loteId: lote.id,
+              cliente,
+              fecha,
+              cantidad,
+              precioUnitario,
+              precioTotal: Math.round(cantidad * precioUnitario * 100) / 100,
+              creadoPor: sesion.nombre
+            });
+          }
+          if(algunaCantidad && precioUnitario > 0){
+            state.ultimosPrecios[t.id] = precioUnitario;
+          }
+        }
+        if(nuevas.length === 0){
+          alert('Escribe cantidad en al menos un lote.');
+          return;
+        }
+        const totalVentaNueva = nuevas.reduce((s,v)=>s+v.precioTotal,0);
+        if(pagoModo === 'abono'){
+          if(abonoInicial <= 0){
+            alert('Escribe cuánto abonó.');
+            return;
+          }
+          if(abonoInicial > totalVentaNueva + 0.005){
+            alert('El abono no puede ser mayor al total de la venta.');
+            return;
+          }
+        }
+        state.ventas.push(...nuevas);
+        registrarClienteSiEsNuevo(cliente);
+        if(pagado){
+          state.pagos.push({ id: uid(), grupoId, monto: totalVentaNueva, fecha, creadoPor: sesion.nombre });
+        } else if(abonoInicial > 0){
+          state.pagos.push({ id: uid(), grupoId, monto: abonoInicial, fecha, creadoPor: sesion.nombre });
+        }
+        formularioVentaAbierto = false;
+        render();
+        saveData();
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ ventaFilter = btn.dataset.filter; render(); });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-tipo]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const tipoId = el.dataset.toggleTipo;
+        tiposExpandido[tipoId] = !tiposExpandido[tipoId];
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-toggle-form-venta]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        formularioVentaAbierto = !formularioVentaAbierto;
+        render();
+      });
+    });
+
+    const ventaBuscarInput = document.getElementById('ventaBuscar');
+    if(ventaBuscarInput){
+      ventaBuscarInput.addEventListener('input', (e)=>{
+        ventaBusqueda = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        render();
+        const nuevoInput = document.getElementById('ventaBuscar');
+        if(nuevoInput){
+          nuevoInput.focus();
+          nuevoInput.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-pago-abono]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.pagoAbono;
+        const montoInput = document.getElementById(`pagoMonto_${key}`);
+        const fechaInput = document.getElementById(`pagoFecha_${key}`);
+        const monto = Number(montoInput.value);
+        const fecha = fechaInput.value;
+        if(!monto || monto <= 0){
+          alert('Escribe un monto válido para registrar el pago.');
+          return;
+        }
+        if(!fecha){
+          alert('Elige una fecha para el pago.');
+          return;
+        }
+        state.pagos.push({ id: uid(), grupoId: key, monto, fecha, creadoPor: sesion.nombre });
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-pago-completo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.pagoCompleto;
+        const saldo = Number(btn.dataset.saldo);
+        const fechaInput = document.getElementById(`pagoFecha_${key}`);
+        const fecha = fechaInput ? fechaInput.value : todayStr();
+        if(saldo <= 0) return;
+        state.pagos.push({ id: uid(), grupoId: key, monto: saldo, fecha: fecha || todayStr(), creadoPor: sesion.nombre });
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoPago = btn.dataset.editarPago;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoPago = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarPago;
+        const pago = state.pagos.find(p=>p.id===id);
+        if(!pago) return;
+        const monto = Number(document.getElementById(`editPagoMonto_${id}`).value);
+        const fecha = document.getElementById(`editPagoFecha_${id}`).value;
+        if(!monto || monto <= 0){
+          alert('Escribe un monto válido.');
+          return;
+        }
+        if(!fecha){
+          alert('Elige una fecha.');
+          return;
+        }
+        pago.monto = monto;
+        pago.fecha = fecha;
+        editandoPago = null;
+        render();
+        saveData();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-del-pago]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const id = btn.dataset.delPago;
+          state.pagos = state.pagos.filter(p=>p.id!==id);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-del-grupo]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const key = btn.dataset.delGrupo;
+          state.ventas = state.ventas.filter(v=>(v.grupoId || v.id) !== key);
+          state.pagos = state.pagos.filter(p=>p.grupoId !== key);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-whatsapp-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.whatsappVenta;
+        const grupo = agruparVentas().find(g=>g.key===key);
+        if(!grupo) return;
+        const pagado = montoPagadoDeGrupo(grupo);
+        const saldo = Math.round((grupo.total - pagado) * 100) / 100;
+
+        const porTipo = {};
+        grupo.items.forEach(v=>{
+          const lote = state.lotes.find(l=>l.id===v.loteId);
+          const tipoId = lote ? lote.tipo : '—';
+          if(!porTipo[tipoId]) porTipo[tipoId] = { cantidad:0, total:0, precioUnitario:v.precioUnitario };
+          porTipo[tipoId].cantidad += Number(v.cantidad);
+          porTipo[tipoId].total += Number(v.precioTotal);
+        });
+        const lineas = Object.keys(porTipo).map(tipoId=>{
+          const info = tipoId !== '—' ? tipoInfo(tipoId) : null;
+          const it = porTipo[tipoId];
+          return `${info?info.label:'—'}: ${it.cantidad} x ${money(it.precioUnitario)} = ${money(it.total)}`;
+        }).join('\n');
+
+        let mensaje = `🌶️ *Chile de Oro*\n`;
+        mensaje += `Remisión V${grupo.folio} - ${grupo.cliente}\n`;
+        mensaje += `Fecha: ${grupo.fecha}\n\n`;
+        mensaje += `${lineas}\n\n`;
+        mensaje += `*Total: ${money(grupo.total)}*\n`;
+        if(pagado > 0){
+          mensaje += `Pagado: ${money(pagado)}\n`;
+        }
+        if(saldo > 0.005){
+          mensaje += `*Saldo pendiente: ${money(saldo)}*\n`;
+        } else {
+          mensaje += `Estado: Pagado ✅\n`;
+        }
+        mensaje += `\n¡Gracias por tu compra! 🌶️`;
+
+        const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoVentaItem = btn.dataset.editarVenta;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoVentaItem = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-venta]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.guardarVenta;
+        const items = state.ventas.filter(v=>(v.grupoId || v.id) === key);
+        // validate first
+        for(const v of items){
+          const loteSelect = document.getElementById(`editVentaLote_${v.id}`);
+          const cInput = document.getElementById(`editVentaCantidad_${v.id}`);
+          const pInput = document.getElementById(`editVentaPrecio_${v.id}`);
+          if(!cInput || !pInput) continue;
+          const nuevoLoteId = loteSelect ? loteSelect.value : v.loteId;
+          const nuevaCantidad = Number(cInput.value) || 0;
+          const loteNuevo = state.lotes.find(l=>l.id===nuevoLoteId);
+          const yaReservado = (nuevoLoteId === v.loteId) ? Number(v.cantidad) : 0;
+          const dispParaEsteItem = loteNuevo ? disponibleDeLote(loteNuevo) + yaReservado : Infinity;
+          if(nuevaCantidad <= 0){
+            alert('La cantidad debe ser mayor a 0. Si ya no vendiste ese tipo, elimina toda la venta y vuelve a capturarla.');
+            return;
+          }
+          if(nuevaCantidad > dispParaEsteItem){
+            alert(`No hay suficiente inventario en L${folioDeLote(nuevoLoteId)}. Máximo disponible: ${dispParaEsteItem}`);
+            return;
+          }
+        }
+        // apply
+        items.forEach(v=>{
+          const loteSelect = document.getElementById(`editVentaLote_${v.id}`);
+          const cInput = document.getElementById(`editVentaCantidad_${v.id}`);
+          const pInput = document.getElementById(`editVentaPrecio_${v.id}`);
+          if(!cInput || !pInput) return;
+          if(loteSelect) v.loteId = loteSelect.value;
+          v.cantidad = Number(cInput.value) || 0;
+          v.precioUnitario = Number(pInput.value) || 0;
+          v.precioTotal = Math.round(v.cantidad * v.precioUnitario * 100) / 100;
+        });
+        editandoVentaItem = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // --- helpers for clientes catalog ---
+  function listaClientes(){
+    const set = new Set(state.clientes);
+    state.ventas.forEach(v=>{ if(v.cliente) set.add(v.cliente); });
+    return Array.from(set).sort((a,b)=> a.localeCompare(b, 'es'));
+  }
+
+  function registrarClienteSiEsNuevo(nombre){
+    if(nombre && !state.clientes.includes(nombre)){
+      state.clientes.push(nombre);
+    }
+  }
+
+  function resumenPorCliente(){
+    const grupos = agruparVentas();
+    const porCliente = {};
+    listaClientes().forEach(nombre=>{ porCliente[nombre] = { nombre, vendido: 0, pendiente: 0 }; });
+    grupos.forEach(g=>{
+      if(!porCliente[g.cliente]) porCliente[g.cliente] = { nombre: g.cliente, vendido: 0, pendiente: 0 };
+      const pagado = montoPagadoDeGrupo(g);
+      porCliente[g.cliente].vendido += g.total;
+      porCliente[g.cliente].pendiente += Math.max(0, g.total - pagado);
+    });
+    return Object.values(porCliente).sort((a,b)=> b.pendiente - a.pendiente || a.nombre.localeCompare(b.nombre,'es'));
+  }
+
+  function agruparGastos(){
+    let lista = [...state.gastos].sort((a,b)=> a.id.localeCompare(b.id));
+    lista.forEach((g,idx)=>{ g._folio = idx + 1; });
+    return lista;
+  }
+
+  function folioDeGasto(gastoId){
+    const g = agruparGastos().find(x=>x.id===gastoId);
+    return g ? g._folio : null;
+  }
+
+  // ---------- CLIENTES ----------
+  function renderClientes(){
+    const resumen = resumenPorCliente();
+    const conDeuda = resumen.filter(c=>c.pendiente > 0.005).length;
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Clientes</h2>
+          <div class="cc-sub">${resumen.length} ${resumen.length===1?'cliente':'clientes'} · ${conDeuda} con saldo pendiente</div>
+        </div>
+      </div>
+      <div class="cc-toolrow">
+        <input type="text" class="cc-searchbox" id="clienteBuscar" placeholder="Buscar cliente..." value="${clienteBusqueda}" />
+        ${puedeCapturar() ? `
+        <div class="cc-addrow">
+          <input type="text" id="clienteNombre" placeholder="Cliente nuevo" />
+          <button class="cc-btn" type="button" id="clienteSubmitBtn">Agregar</button>
+        </div>` : ''}
+      </div>
+      <div class="cc-listcard" id="clientesList">
+        ${(()=>{
+          let lista = resumen;
+          if(clienteBusqueda.trim()){
+            const q = clienteBusqueda.trim().toLowerCase();
+            lista = lista.filter(c=>c.nombre.toLowerCase().includes(q));
+          }
+          if(lista.length===0) return '<div class="cc-empty">No hay clientes que coincidan con tu búsqueda.</div>';
+          return lista.map(c=>{
+            if(editandoCliente === c.nombre){
+              return `
+                <div class="cc-editbox">
+                  <div class="cc-addrow" style="flex-wrap:wrap;">
+                    <input type="text" id="editClienteNombre_${c.nombre}" value="${c.nombre}" list="clientesDatalistEdit" style="flex:1 1 150px;" />
+                    <button class="cc-btn small" data-guardar-cliente="${c.nombre}">Guardar</button>
+                    <button class="cc-btn small ghost" data-cancelar-edit-cliente="${c.nombre}">Cancelar</button>
+                  </div>
+                  <p class="cc-meta" style="margin:8px 0 0;">Si le pones el nombre de un cliente que ya existe, se fusionan y se junta todo su historial.</p>
+                </div>
+              `;
+            }
+            const debe = c.pendiente > 0.005;
+            return `
+            <div class="cc-rowi">
+              <div class="cc-av">${iniciales(c.nombre)}</div>
+              <div class="grow">
+                <div class="nm">${c.nombre}</div>
+                <div class="cc-links">
+                  ${esAdmin() ? `<button class="cc-linkbtn" data-renombrar-cliente="${c.nombre}">Renombrar / fusionar</button>` : ''}
+                  ${esAdmin() && !debe && !state.ventas.some(v=>v.cliente===c.nombre) ? `<button class="cc-linkbtn danger" data-del-cliente="${c.nombre}">Eliminar</button>` : ''}
+                </div>
+              </div>
+              <div class="rt">
+                <div class="amt" style="color:${debe?'#a8291f':'var(--money)'}">${debe ? 'Debe ' + money(c.pendiente) : 'Al corriente'}</div>
+                <div class="sm">${money(c.vendido)} histórico</div>
+              </div>
+            </div>
+          `;}).join('');
+        })()}
+      </div>
+      <datalist id="clientesDatalistEdit">
+        ${listaClientes().map(c=>`<option value="${c}"></option>`).join('')}
+      </datalist>
+    `;
+
+    const clienteSubmitBtn = document.getElementById('clienteSubmitBtn');
+    if(clienteSubmitBtn) clienteSubmitBtn.addEventListener('click', ()=>{
+      const input = document.getElementById('clienteNombre');
+      const nombre = input.value.trim();
+      if(!nombre){
+        alert('Escribe un nombre.');
+        return;
+      }
+      if(state.clientes.includes(nombre)){
+        alert('Ese cliente ya está en la lista.');
+        return;
+      }
+      state.clientes.push(nombre);
+      render();
+      saveData();
+    });
+
+    const clienteBuscarInput = document.getElementById('clienteBuscar');
+    if(clienteBuscarInput){
+      clienteBuscarInput.addEventListener('input', (e)=>{
+        clienteBusqueda = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        render();
+        const nuevoInput = document.getElementById('clienteBuscar');
+        if(nuevoInput){
+          nuevoInput.focus();
+          nuevoInput.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    }
+
+    bodyEl.querySelectorAll('[data-del-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          const nombre = btn.dataset.delCliente;
+          state.clientes = state.clientes.filter(c=>c!==nombre);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-renombrar-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoCliente = btn.dataset.renombrarCliente;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoCliente = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-cliente]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const nombreViejo = btn.dataset.guardarCliente;
+        const input = document.getElementById(`editClienteNombre_${nombreViejo}`);
+        const nombreNuevo = input.value.trim();
+        if(!nombreNuevo){
+          alert('Escribe un nombre válido.');
+          return;
+        }
+        if(nombreNuevo !== nombreViejo){
+          state.ventas.forEach(v=>{ if(v.cliente === nombreViejo) v.cliente = nombreNuevo; });
+          state.clientes = state.clientes.filter(c=>c !== nombreViejo);
+          registrarClienteSiEsNuevo(nombreNuevo);
+        }
+        editandoCliente = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- GASTOS ----------
+  function renderGastos(){
+    const gastosOrdenados = [...state.gastos].sort((a,b)=> b.fecha.localeCompare(a.fecha));
+    const gruposLotes = agruparLotes().filter(g=> !state.lotesCerrados.includes(g.key));
+    const opcionesLote = gruposLotes.map(g=>({
+      key: g.key,
+      label: `L${g.folio} (${g.items[0].fecha})`
+    }));
+
+    const totalGastosLista = gastosOrdenados.reduce((t,g)=>t+Number(g.monto),0);
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Gastos</h2>
+          <div class="cc-sub">${gastosOrdenados.length} ${gastosOrdenados.length===1?'gasto':'gastos'} · ${money(totalGastosLista)} en total</div>
+        </div>
+      </div>
+      ${puedeCapturar() ? `
+      <div class="cc-formcard">
+        <h3>Registrar gasto</h3>
+        <form id="gastoForm" onsubmit="return false;">
+          <div class="cc-gform">
+            <div class="cc-field full">
+              <label>¿En qué se gastó?</label>
+              <input type="text" id="gastoConcepto" name="concepto" placeholder="Ej. chile, gas, frascos" required />
+            </div>
+            <div class="cc-field">
+              <label>Monto</label>
+              <input type="number" id="gastoMonto" name="monto" min="0" step="0.01" placeholder="$ 0.00" inputmode="decimal" required />
+            </div>
+            <div class="cc-field">
+              <label>Fecha</label>
+              <input type="date" id="gastoFecha" name="fecha" value="${todayStr()}" required />
+            </div>
+            <div class="cc-field">
+              <label>Asignar a</label>
+              <select id="gastoDestino">
+                <option value="general">General</option>
+                <option value="retiro">Retiro de utilidad</option>
+                ${opcionesLote.length > 0 ? `<optgroup label="Asignar a un lote">
+                  ${opcionesLote.map(o=>`<option value="${o.key}">${o.label}</option>`).join('')}
+                </optgroup>` : ''}
+              </select>
+            </div>
+            <button class="cc-btn" type="button" id="gastoSubmitBtn">+ Agregar gasto</button>
+          </div>
+        </form>
+      </div>
+      ` : ''}
+      <div class="cc-listcard" id="gastosList">
+        ${gastosOrdenados.length===0 ? '<div class="cc-empty">Aún no hay gastos registrados.</div>' :
+          gastosOrdenados.map(g=>{
+            let destinoLabel = 'General';
+            if(g.destino === 'retiro') destinoLabel = 'Retiro';
+            else if(g.destino && g.destino !== 'general'){
+              const grupo = agruparLotes().find(gr=>gr.key === g.destino);
+              destinoLabel = grupo ? `L${grupo.folio}` : 'Lote eliminado';
+            }
+            if(editandoGasto === g.id){
+              return `
+              <div class="cc-editbox">
+                <div class="cc-gform">
+                  <div class="cc-field full">
+                    <label>¿En qué se gastó?</label>
+                    <input type="text" id="editGastoConcepto_${g.id}" value="${g.concepto}" />
+                  </div>
+                  <div class="cc-field">
+                    <label>Monto</label>
+                    <input type="number" id="editGastoMonto_${g.id}" min="0" step="0.01" value="${g.monto}" />
+                  </div>
+                  <div class="cc-field">
+                    <label>Fecha</label>
+                    <input type="date" id="editGastoFecha_${g.id}" value="${g.fecha}" />
+                  </div>
+                  <div class="cc-field full">
+                    <label>¿A dónde va?</label>
+                    <select id="editGastoDestino_${g.id}">
+                      <option value="general" ${g.destino==='general'?'selected':''}>General</option>
+                      <option value="retiro" ${g.destino==='retiro'?'selected':''}>Retiro de utilidad</option>
+                      ${opcionesLote.map(o=>`<option value="${o.key}" ${g.destino===o.key?'selected':''}>${o.label}</option>`).join('')}
+                      ${(g.destino && g.destino!=='general' && g.destino!=='retiro' && !opcionesLote.some(o=>o.key===g.destino)) ? (()=>{
+                        const grupoCerrado = agruparLotes().find(gr=>gr.key===g.destino);
+                        return grupoCerrado ? `<option value="${g.destino}" selected>L${grupoCerrado.folio} (Cerrado)</option>` : '';
+                      })() : ''}
+                    </select>
+                  </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                  <button class="cc-btn small" data-guardar-gasto="${g.id}">Guardar</button>
+                  <button class="cc-btn small ghost" data-cancelar-edit-gasto="${g.id}">Cancelar</button>
+                </div>
+              </div>
+              `;
+            }
+            return `
+            <div class="cc-rowi" style="align-items:flex-start;">
+              <div class="grow">
+                <div class="nm">G${folioDeGasto(g.id)} · ${g.concepto}</div>
+                <div class="sb"><span class="cc-tagl">${destinoLabel}</span><span>${g.fecha}${g.creadoPor ? ` · ${g.creadoPor}` : ''}</span></div>
+              </div>
+              <div class="rt">
+                <div class="amt">${money(g.monto)}</div>
+                ${esAdmin() ? `<div class="cc-links">
+                  <button class="cc-linkbtn" data-editar-gasto="${g.id}">Editar</button>
+                  <button class="cc-linkbtn danger" data-del-gasto="${g.id}">Eliminar</button>
+                </div>` : ''}
+              </div>
+            </div>
+          `;}).join('')
+        }
+      </div>
+    `;
+
+    const gastoSubmitBtn = document.getElementById('gastoSubmitBtn');
+    if(gastoSubmitBtn) gastoSubmitBtn.addEventListener('click', ()=>{
+      const fecha = document.getElementById('gastoFecha').value;
+      const monto = Number(document.getElementById('gastoMonto').value);
+      const concepto = document.getElementById('gastoConcepto').value;
+      const destino = document.getElementById('gastoDestino').value;
+      if(!fecha || !monto || !concepto){
+        alert('Llena fecha, monto y en qué se gastó.');
+        return;
+      }
+      const nuevo = {
+        id: uid(),
+        fecha,
+        concepto,
+        monto,
+        destino,
+        creadoPor: sesion.nombre
+      };
+      state.gastos.push(nuevo);
+      render();
+      saveData();
+    });
+
+    bodyEl.querySelectorAll('[data-del-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', ()=>{
+          state.gastos = state.gastos.filter(g=>g.id!==btn.dataset.delGasto);
+          render();
+          saveData();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoGasto = btn.dataset.editarGasto;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoGasto = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-gasto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.guardarGasto;
+        const gasto = state.gastos.find(g=>g.id===id);
+        if(!gasto) return;
+        const fecha = document.getElementById(`editGastoFecha_${id}`).value;
+        const monto = Number(document.getElementById(`editGastoMonto_${id}`).value);
+        const concepto = document.getElementById(`editGastoConcepto_${id}`).value;
+        const destino = document.getElementById(`editGastoDestino_${id}`).value;
+        if(!fecha || !monto || !concepto){
+          alert('Llena fecha, monto y en qué se gastó.');
+          return;
+        }
+        gasto.fecha = fecha;
+        gasto.monto = monto;
+        gasto.concepto = concepto;
+        gasto.destino = destino;
+        editandoGasto = null;
+        render();
+        saveData();
+      });
+    });
+  }
+
+  // ---------- USUARIOS ----------
+  let listaUsuarios = [];
+  let errorUsuario = '';
+  let editandoUsuario = null;
+
+  async function cargarUsuarios(){
+    try{
+      const res = await apiFetch('/api/usuarios');
+      if(res.ok){
+        listaUsuarios = await res.json();
+      }
+    }catch(e){
+      console.error('Error cargando usuarios', e);
+    }
+    render();
+  }
+
+  function renderUsuarios(){
+    const rolClase = (r)=> r==='admin' ? 'cc-rol-admin' : r==='vista' ? 'cc-rol-vista' : 'cc-rol-usuario';
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Usuarios</h2>
+          <div class="cc-sub">${listaUsuarios.length} ${listaUsuarios.length===1?'usuario':'usuarios'} con acceso a la app</div>
+        </div>
+      </div>
+      <div class="cc-twocol">
+        <div class="cc-listcard" id="usuariosList">
+          ${listaUsuarios.length===0 ? '<div class="cc-empty">Cargando usuarios...</div>' :
+            listaUsuarios.map(u=>{
+              if(editandoUsuario === u.id){
+                return `
+                  <div class="cc-editbox">
+                    <div class="cc-form-row">
+                      <div class="cc-field">
+                        <label>Nombre</label>
+                        <input type="text" id="editUsuarioNombre_${u.id}" value="${u.nombre}" />
+                      </div>
+                      <div class="cc-field">
+                        <label>Usuario (para entrar)</label>
+                        <input type="text" id="editUsuarioLogin_${u.id}" value="${u.usuario}" />
+                      </div>
+                    </div>
+                    <div class="cc-form-row">
+                      <div class="cc-field">
+                        <label>Nueva contraseña</label>
+                        <input type="text" id="editUsuarioPassword_${u.id}" placeholder="Dejar en blanco para no cambiarla" />
+                      </div>
+                      <div class="cc-field">
+                        <label>Rol</label>
+                        <select id="editUsuarioRol_${u.id}">
+                          <option value="usuario" ${u.rol==='usuario'?'selected':''}>Usuario (captura, no edita ni elimina)</option>
+                          <option value="vista" ${u.rol==='vista'?'selected':''}>Solo Vista (no captura, no edita, no elimina)</option>
+                          <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador (todo)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                      <button class="cc-btn small" data-guardar-usuario="${u.id}">Guardar</button>
+                      <button class="cc-btn small ghost" data-cancelar-edit-usuario="${u.id}">Cancelar</button>
+                    </div>
+                  </div>
+                `;
+              }
+              return `
+              <div class="cc-rowi">
+                <div class="cc-av">${iniciales(u.nombre)}</div>
+                <div class="grow">
+                  <div class="nm">${u.nombre}</div>
+                  <div class="sb"><span>@${u.usuario}</span>
+                    <span class="cc-links">
+                      <button class="cc-linkbtn" data-editar-usuario="${u.id}">Editar</button>
+                      ${String(u.id) !== String(sesion.id) ? `<button class="cc-linkbtn danger" data-del-usuario="${u.id}">Eliminar</button>` : ''}
+                    </span>
+                  </div>
+                </div>
+                <span class="cc-rolpill ${rolClase(u.rol)}">${etiquetaRol(u.rol)}</span>
+              </div>
+            `;}).join('')
+          }
+        </div>
+        <div class="cc-formcard">
+          <h3>Nuevo usuario</h3>
+          <div class="cc-field" style="margin-bottom:10px;">
+            <label>Nombre</label>
+            <input type="text" id="nuevoUsuarioNombre" placeholder="Ej. Esposa de Aldo" />
+          </div>
+          <div class="cc-field" style="margin-bottom:10px;">
+            <label>Usuario para entrar</label>
+            <input type="text" id="nuevoUsuarioLogin" placeholder="Ej. esposa" />
+          </div>
+          <div class="cc-field" style="margin-bottom:10px;">
+            <label>Contraseña</label>
+            <input type="text" id="nuevoUsuarioPassword" placeholder="Contraseña" />
+          </div>
+          <div class="cc-field" style="margin-bottom:12px;">
+            <label>Rol</label>
+            <select id="nuevoUsuarioRol">
+              <option value="usuario">Usuario — captura, no edita ni elimina</option>
+              <option value="vista">Solo Vista — no captura, no edita, no elimina</option>
+              <option value="admin">Administrador — acceso total</option>
+            </select>
+          </div>
+          ${errorUsuario ? `<p style="color:#a8291f; font-size:13px; margin:0 0 10px;">${errorUsuario}</p>` : ''}
+          <button class="cc-btn" type="button" id="crearUsuarioBtn">Crear usuario</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('crearUsuarioBtn').addEventListener('click', async ()=>{
+      const nombre = document.getElementById('nuevoUsuarioNombre').value.trim();
+      const usuario = document.getElementById('nuevoUsuarioLogin').value.trim();
+      const password = document.getElementById('nuevoUsuarioPassword').value;
+      const rol = document.getElementById('nuevoUsuarioRol').value;
+      if(!nombre || !usuario || !password){
+        errorUsuario = 'Llena nombre, usuario y contraseña.';
+        render();
+        return;
+      }
+      try{
+        const res = await apiFetch('/api/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, usuario, password, rol })
+        });
+        const datos = await res.json();
+        if(!res.ok){
+          errorUsuario = datos.error || 'No se pudo crear el usuario.';
+          render();
+          return;
+        }
+        errorUsuario = '';
+        await cargarUsuarios();
+      }catch(e){
+        errorUsuario = 'No se pudo conectar con el servidor.';
+        render();
+      }
+    });
+
+    bodyEl.querySelectorAll('[data-del-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        armarConfirmacion(btn, '¿Seguro? Clic de nuevo', async ()=>{
+          const id = btn.dataset.delUsuario;
+          await apiFetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+          await cargarUsuarios();
+        });
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-editar-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoUsuario = Number(btn.dataset.editarUsuario);
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-cancelar-edit-usuario]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        editandoUsuario = null;
+        render();
+      });
+    });
+
+    bodyEl.querySelectorAll('[data-guardar-usuario]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.guardarUsuario;
+        const nombre = document.getElementById(`editUsuarioNombre_${id}`).value.trim();
+        const usuario = document.getElementById(`editUsuarioLogin_${id}`).value.trim();
+        const password = document.getElementById(`editUsuarioPassword_${id}`).value;
+        const rol = document.getElementById(`editUsuarioRol_${id}`).value;
+        if(!nombre || !usuario){
+          alert('Llena nombre y usuario.');
+          return;
+        }
+        try{
+          const res = await apiFetch(`/api/usuarios/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, usuario, password: password || undefined, rol })
+          });
+          const datos = await res.json();
+          if(!res.ok){
+            alert(datos.error || 'No se pudo editar el usuario.');
+            return;
+          }
+          // si el admin se edita a si mismo, actualiza tambien el nombre mostrado en el encabezado
+          if(String(id) === String(sesion.id)){
+            guardarSesion({ ...sesion, nombre, usuario, rol });
+          }
+          editandoUsuario = null;
+          await cargarUsuarios();
+        }catch(e){
+          alert('No se pudo conectar con el servidor.');
+        }
+      });
+    });
+  }
+
+  // ---------- CAJA ----------
+  let editandoSaldoInicial = false;
+
+  let utilidadFilter = 'todos';
+
+  function renderUtilidades(){
+    const totalVendido = state.ventas.reduce((s,v)=>s+Number(v.precioTotal),0);
+    const totalGastos = state.gastos.reduce((s,g)=>s+Number(g.monto),0);
+    const utilidadTotal = Math.round((totalVendido - totalGastos) * 100) / 100;
+
+    let listaGrupos = agruparLotes().map(g=>{
+      const vendido = vendidoDelGrupoLote(g);
+      const gastos = gastosDelGrupoLote(g.key);
+      const utilidad = Math.round((vendido - gastos) * 100) / 100;
+      const cerrado = state.lotesCerrados.includes(g.key);
+      return { ...g, vendido, gastos, utilidad, cerrado };
+    });
+
+    if(utilidadFilter === 'cerrados'){
+      listaGrupos = listaGrupos.filter(g=>g.cerrado);
+    }
+    listaGrupos.sort((a,b)=> b.utilidad - a.utilidad);
+
+    const margen = totalVendido > 0 ? Math.round(utilidadTotal / totalVendido * 100) : 0;
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Utilidades</h2>
+          <div class="cc-sub">Ganancia por lote, de mayor a menor</div>
+        </div>
+      </div>
+      <div class="cc-hero ${utilidadTotal>=0?'green':''}" style="margin-bottom:14px;">
+        <div class="label">Utilidad total · margen ${margen}%</div>
+        <div class="big">${money(utilidadTotal)}</div>
+        <div class="small">Vendido ${money(totalVendido)} − gastos ${money(totalGastos)}</div>
+      </div>
+      <div class="cc-filterbar">
+        <div class="cc-filter-btn ${utilidadFilter==='todos'?'active':''}" data-utilidad-filter="todos">Todos los lotes</div>
+        <div class="cc-filter-btn ${utilidadFilter==='cerrados'?'active':''}" data-utilidad-filter="cerrados">Solo cerrados</div>
+      </div>
+      <div class="cc-listcard">
+        ${listaGrupos.length===0 ? '<div class="cc-empty">No hay lotes en esta categoría.</div>' :
+          listaGrupos.map(g=>{
+            const tot = Math.max(g.vendido, g.gastos, 0.01);
+            const pu = Math.max(0, g.utilidad) / tot * 100;
+            const pg = Math.min(g.gastos, tot) / tot * 100;
+            return `
+            <div class="cc-urow">
+              <div class="l1">
+                <div class="t">L${g.folio} · ${fechaBonita(g.items[0].fecha)}
+                  <span class="cc-pill ${g.cerrado?'neutral':'pagado'}">${g.cerrado?'Cerrado':'Abierto'}</span>
+                </div>
+                <div style="font-size:16px; font-weight:700; color:${g.utilidad>=0?'#3f6b3a':'#a8291f'}">${money(g.utilidad)}</div>
+              </div>
+              <div class="cc-ubar"><i style="width:${pu}%; background:#3f6b3a"></i><i style="width:${pg}%; background:#e3a597"></i></div>
+              <div class="cc-meta">Vendido ${money(g.vendido)} · gastos ${money(g.gastos)}</div>
+            </div>`;
+          }).join('')
+        }
+      </div>
+    `;
+
+    bodyEl.querySelectorAll('[data-utilidad-filter]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ utilidadFilter = btn.dataset.utilidadFilter; render(); });
+    });
+  }
+
+  function renderCaja(){
+    const entradas = entradasDeCaja().map(e=>({...e, tipo:'entrada'}));
+    const salidas = state.gastos.map(g=>({
+      fecha: g.fecha,
+      tipo: 'salida',
+      concepto: `G${folioDeGasto(g.id)} - ${g.concepto}`,
+      monto: Number(g.monto)
+    }));
+
+    const movimientos = [...entradas, ...salidas].sort((a,b)=> a.fecha.localeCompare(b.fecha) || 0);
+    let running = state.saldoInicial || 0;
+    const conBalance = movimientos.map(m=>{
+      running += (m.tipo==='entrada' ? m.monto : -m.monto);
+      return {...m, balance: running};
+    });
+    const saldoActual = running;
+    const totalEntradas = entradas.reduce((s,m)=>s+m.monto,0);
+    const totalSalidas = salidas.reduce((s,m)=>s+m.monto,0);
+
+    const paraMostrar = [...conBalance].reverse();
+
+    bodyEl.innerHTML = `
+      <div class="cc-pagehead">
+        <div>
+          <h2 class="cc-title">Caja</h2>
+          <div class="cc-sub">Entradas, salidas y saldo después de cada movimiento</div>
+        </div>
+      </div>
+      <div class="cc-bigcard">
+        <div class="top">
+          <div class="lbl">Saldo en caja</div>
+          <div class="num" style="color:${saldoActual>=0?'var(--char)':'#a8291f'}">${money(saldoActual)}</div>
+        </div>
+        <div class="cc-stripe3">
+          <div>
+            <span>Saldo inicial</span>
+            <b>${money(state.saldoInicial || 0)}</b>
+            ${esAdmin() && !editandoSaldoInicial ? `<button class="cc-linkbtn" type="button" id="editarSaldoInicialBtn" style="padding:0; min-height:0; text-align:left;">Editar</button>` : ''}
+          </div>
+          <div><span>+ Entradas</span><b style="color:var(--money)">${money(totalEntradas)}</b></div>
+          <div><span>− Salidas</span><b style="color:#a8291f">${money(totalSalidas)}</b></div>
+        </div>
+      </div>
+      ${esAdmin() && editandoSaldoInicial ? `
+      <div class="cc-formcard">
+        <h3>Saldo inicial</h3>
+        <p class="cc-meta" style="margin:-6px 0 12px;">El dinero que ya tenías en la mano antes de empezar a usar la app. Se suma una sola vez al total de caja.</p>
+        <div class="cc-addrow">
+          <input type="number" id="saldoInicialInput" min="0" step="0.01" inputmode="decimal" value="${state.saldoInicial || 0}" />
+          <button class="cc-btn small" type="button" id="guardarSaldoInicialBtn">Guardar</button>
+          <button class="cc-btn small ghost" type="button" id="cancelarSaldoInicialBtn">Cancelar</button>
+        </div>
+      </div>
+      ` : ''}
+      <div class="cc-sect">Movimientos</div>
+      <div class="cc-listcard">
+        ${paraMostrar.length===0 ? '<div class="cc-empty">Aún no hay movimientos. Registra pagos de ventas o gastos.</div>' :
+          paraMostrar.map(m=>{
+            const col = m.tipo==='entrada' ? '#3f6b3a' : '#a8291f';
+            return `
+            <div class="cc-rowi">
+              <span class="cc-dotm" style="background:${col}"></span>
+              <div class="grow">
+                <div class="nm">${m.concepto}</div>
+                <div class="sb">${m.fecha} · ${m.tipo==='entrada'?'Entrada':'Salida'}</div>
+              </div>
+              <div class="rt">
+                <div class="amt" style="color:${col}">${m.tipo==='entrada'?'+':'−'}${money(m.monto)}</div>
+                <div class="sm">saldo ${money(m.balance)}</div>
+              </div>
+            </div>`;
+          }).join('')
+        }
+      </div>
+    `;
+
+    const editarBtn = document.getElementById('editarSaldoInicialBtn');
+    if(editarBtn) editarBtn.addEventListener('click', ()=>{
+      editandoSaldoInicial = true;
+      render();
+    });
+
+    const cancelarBtn = document.getElementById('cancelarSaldoInicialBtn');
+    if(cancelarBtn) cancelarBtn.addEventListener('click', ()=>{
+      editandoSaldoInicial = false;
+      render();
+    });
+
+    const guardarBtn = document.getElementById('guardarSaldoInicialBtn');
+    if(guardarBtn) guardarBtn.addEventListener('click', ()=>{
+      const valor = Number(document.getElementById('saldoInicialInput').value) || 0;
+      state.saldoInicial = valor;
+      editandoSaldoInicial = false;
+      render();
+      saveData();
+    });
+  }
+
+  function aplicarTema(){
+    app.classList.toggle('dark', !!state.temaOscuro);
+    const btn = document.getElementById('temaToggleBtn');
+    if(btn) btn.textContent = state.temaOscuro ? '☀️ Modo claro' : '🌙 Modo oscuro';
+  }
+
+  document.getElementById('temaToggleBtn').addEventListener('click', ()=>{
+    state.temaOscuro = !state.temaOscuro;
+    aplicarTema();
+    saveData();
+  });
+
+  function iniciar(){
+    const guardada = localStorage.getItem('cc_sesion');
+    if(guardada){
+      try{
+        sesion = JSON.parse(guardada);
+      }catch(e){
+        sesion = null;
+      }
+    }
+    if(sesion){
+      loadData();
+    } else {
+      render();
+    }
+  }
+
+  iniciar();
+})();
+</script>
+</body>
+</html>
